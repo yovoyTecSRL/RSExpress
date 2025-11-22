@@ -1,0 +1,900 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RS Express - Tu servicio de delivery y mandados</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="container">
+            <div class="logo">
+                <img src="assets/rsexpress-logo-h.png" alt="RS Express" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                <div class="logo-fallback">
+                    <i class="fas fa-rocket"></i>
+                    <span>RS Express</span>
+                </div>
+            </div>
+            <nav class="nav">
+                <a href="#" class="nav-link active" data-page="home">Inicio</a>
+                <a href="#" class="nav-link" data-page="trips">Mis Viajes</a>
+                <a href="#" class="nav-link" data-page="driver">Ser Conductor</a>
+                <a href="#" class="nav-link" data-page="driver-panel">Panel Conductor</a>
+                <a href="#" class="nav-link" data-page="history">Historial</a>
+                <a href="#" class="nav-link" data-page="stats">Estadísticas</a>
+                <a href="#" class="nav-link" data-page="profile">Perfil</a>
+            </nav>
+            <div class="user-menu">
+                <button class="btn-theme-toggle" id="themeToggle" title="Cambiar tema">
+                    <i class="fas fa-sun"></i>
+                </button>
+                <button class="btn-login" id="loginBtn">Iniciar Sesión</button>
+                <div class="user-profile" id="userProfile" style="display: none;">
+                    <img src="assets/default-avatar.png" alt="Usuario" class="avatar" id="userAvatar" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Ccircle cx=%2250%22 cy=%2250%22 r=%2250%22 fill=%22%23e74c3c%22/%3E%3Ctext x=%2250%22 y=%2260%22 font-size=%2240%22 text-anchor=%22middle%22 fill=%22white%22%3EU%3C/text%3E%3C/svg%3E'>
+                    <span id="userName">Usuario</span>
+                    <button class="btn-logout" id="logoutBtn">Salir</button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Home Page -->
+        <section id="homePage" class="page active">
+            <div class="hero">
+                <div class="container">
+                    <div class="hero-content">
+                        <h1>Envía o recibe lo que necesites</h1>
+                        <p>Delivery rápido y seguro en tu ciudad</p>
+                        <div class="service-selector">
+                            <button class="service-btn active" data-service="delivery">
+                                <i class="fas fa-box"></i>
+                                <span>Enviar Paquete</span>
+                            </button>
+                            <button class="service-btn" data-service="errand">
+                                <i class="fas fa-shopping-bag"></i>
+                                <span>Mandado</span>
+                            </button>
+                            <button class="service-btn" data-service="transport">
+                                <i class="fas fa-car"></i>
+                                <span>Transporte</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Order Form -->
+            <div class="container">
+                <div class="order-form-container">
+                    <form id="orderForm" class="order-form">
+                        <h2>Solicita tu servicio</h2>
+                        
+                        <div class="form-group">
+                            <label><i class="fas fa-map-marker-alt"></i> Punto de Recogida</label>
+                            <input type="text" id="pickupLocation" placeholder="Ingresa la dirección de origen" required>
+                            <div class="btn-group">
+                                <button type="button" class="btn-location" id="btnPickupLocation">
+                                    <i class="fas fa-crosshairs"></i> Usar mi ubicación
+                                </button>
+                                <button type="button" class="btn-location" id="btnPickupMap">
+                                    <i class="fas fa-map-marked-alt"></i> Seleccionar en mapa
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label><i class="fas fa-map-marker-alt"></i> Punto de Entrega</label>
+                            <input type="text" id="deliveryLocation" placeholder="Ingresa la dirección de destino" required>
+                            <button type="button" class="btn-location" id="btnDeliveryMap">
+                                <i class="fas fa-map-marked-alt"></i> Seleccionar en mapa
+                            </button>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label><i class="fas fa-calendar"></i> Fecha</label>
+                                <input type="date" id="orderDate" required>
+                            </div>
+                            <div class="form-group">
+                                <label><i class="fas fa-clock"></i> Hora</label>
+                                <input type="time" id="orderTime" required>
+                            </div>
+                        </div>
+
+                        <div class="form-group" id="packageDetails">
+                            <label><i class="fas fa-box"></i> Descripción del paquete</label>
+                            <textarea id="packageDescription" placeholder="Describe lo que envías (tamaño, peso, frágil, etc.)" rows="3"></textarea>
+                        </div>
+
+                        <div class="form-group" id="errandDetails" style="display: none;">
+                            <label><i class="fas fa-list"></i> Detalles del mandado</label>
+                            <textarea id="errandDescription" placeholder="¿Qué necesitas que compren o hagan?" rows="3"></textarea>
+                            <div class="form-check">
+                                <input type="checkbox" id="needPayment">
+                                <label for="needPayment">Necesito que paguen por mí (se añadirá al costo)</label>
+                            </div>
+                        </div>
+
+                        <div class="price-estimate">
+                            <div class="price-row">
+                                <span>Distancia estimada:</span>
+                                <span id="estimatedDistance">-- km</span>
+                            </div>
+                            <div class="price-row">
+                                <span>Tiempo estimado:</span>
+                                <span id="estimatedTime">-- min</span>
+                            </div>
+                            <div class="price-row total">
+                                <span>Costo estimado:</span>
+                                <span id="estimatedPrice">$--</span>
+                            </div>
+                        </div>
+
+                        <button type="submit" class="btn-submit">
+                            <i class="fas fa-paper-plane"></i> Solicitar Servicio
+                        </button>
+                    </form>
+
+                    <!-- Map Preview -->
+                    <div class="map-preview">
+                        <div id="map" class="map"></div>
+                        <div class="map-controls">
+                            <button type="button" class="map-control-btn" id="btnCenterMap" title="Centrar mapa">
+                                <i class="fas fa-compress-arrows-alt"></i>
+                            </button>
+                            <button type="button" class="map-control-btn" id="btnClearRoute" title="Limpiar ruta">
+                                <i class="fas fa-eraser"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Features -->
+            <div class="features">
+                <div class="container">
+                    <h2>¿Por qué elegir RS Express?</h2>
+                    <div class="features-grid">
+                        <div class="feature-card">
+                            <i class="fas fa-clock"></i>
+                            <h3>Rápido</h3>
+                            <p>Entregas en tiempo récord</p>
+                        </div>
+                        <div class="feature-card">
+                            <i class="fas fa-shield-alt"></i>
+                            <h3>Seguro</h3>
+                            <p>Conductores verificados</p>
+                        </div>
+                        <div class="feature-card">
+                            <i class="fas fa-dollar-sign"></i>
+                            <h3>Económico</h3>
+                            <p>Mejores precios del mercado</p>
+                        </div>
+                        <div class="feature-card">
+                            <i class="fas fa-mobile-alt"></i>
+                            <h3>Seguimiento</h3>
+                            <p>Rastrea tu pedido en tiempo real</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Trips Page -->
+        <section id="tripsPage" class="page">
+            <div class="container">
+                <div class="page-header">
+                    <h1>Mis Viajes y Mandados</h1>
+                    <div class="filters">
+                        <button class="filter-btn active" data-filter="all">Todos</button>
+                        <button class="filter-btn" data-filter="active">Activos</button>
+                        <button class="filter-btn" data-filter="completed">Completados</button>
+                        <button class="filter-btn" data-filter="cancelled">Cancelados</button>
+                    </div>
+                </div>
+
+                <div id="tripsList" class="trips-list">
+                    <!-- Trips will be dynamically loaded here -->
+                </div>
+            </div>
+        </section>
+
+        <!-- Driver Page -->
+        <section id="driverPage" class="page">
+            <div class="container">
+                <div class="driver-hero">
+                    <h1>Conviértete en conductor de RS Express</h1>
+                    <p>Gana dinero con tu vehículo en tus tiempos libres</p>
+                </div>
+
+                <div class="driver-benefits">
+                    <h2>Beneficios de ser conductor</h2>
+                    <div class="benefits-grid">
+                        <div class="benefit-card">
+                            <i class="fas fa-calendar-check"></i>
+                            <h3>Horarios Flexibles</h3>
+                            <p>Trabaja cuando quieras</p>
+                        </div>
+                        <div class="benefit-card">
+                            <i class="fas fa-money-bill-wave"></i>
+                            <h3>Buenos Ingresos</h3>
+                            <p>Gana hasta $500/día</p>
+                        </div>
+                        <div class="benefit-card">
+                            <i class="fas fa-mobile"></i>
+                            <h3>App Fácil de Usar</h3>
+                            <p>Interfaz intuitiva</p>
+                        </div>
+                        <div class="benefit-card">
+                            <i class="fas fa-headset"></i>
+                            <h3>Soporte 24/7</h3>
+                            <p>Siempre estamos para ayudarte</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="driver-requirements">
+                    <h2>Requisitos</h2>
+                    <ul class="requirements-list">
+                        <li><i class="fas fa-check"></i> Ser mayor de 21 años</li>
+                        <li><i class="fas fa-check"></i> Tener licencia de conducir vigente</li>
+                        <li><i class="fas fa-check"></i> Vehículo en buen estado</li>
+                        <li><i class="fas fa-check"></i> Smartphone con GPS</li>
+                        <li><i class="fas fa-check"></i> Seguro del vehículo</li>
+                    </ul>
+                </div>
+
+                <form id="driverForm" class="driver-form">
+                    <h2>Solicitud de Registro</h2>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Nombre Completo</label>
+                            <input type="text" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Teléfono</label>
+                            <input type="tel" required>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Email</label>
+                            <input type="email" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Ciudad</label>
+                            <input type="text" required>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Tipo de Vehículo</label>
+                        <select required>
+                            <option value="">Selecciona...</option>
+                            <option value="moto">Motocicleta</option>
+                            <option value="auto">Automóvil</option>
+                            <option value="van">Van/Camioneta</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Licencia de Conducir</label>
+                        <input type="text" placeholder="Número de licencia" required>
+                    </div>
+
+                    <button type="submit" class="btn-submit">
+                        <i class="fas fa-paper-plane"></i> Enviar Solicitud
+                    </button>
+                </form>
+            </div>
+        </section>
+
+        <!-- Driver Panel Page -->
+        <section id="driverPanelPage" class="page">
+            <div class="container">
+                <div class="page-header">
+                    <h1><i class="fas fa-steering-wheel"></i> Panel del Conductor</h1>
+                    <div class="driver-status">
+                        <button class="btn-status active" id="btnOnline">
+                            <i class="fas fa-circle"></i> Conectado
+                        </button>
+                        <button class="btn-status" id="btnOffline">
+                            <i class="fas fa-circle"></i> Desconectado
+                        </button>
+                    </div>
+                </div>
+
+                <div class="driver-dashboard">
+                    <!-- Driver Stats -->
+                    <div class="dashboard-stats">
+                        <div class="stat-card">
+                            <i class="fas fa-dollar-sign"></i>
+                            <div class="stat-content">
+                                <span class="stat-label">Ganancias Hoy</span>
+                                <h3 id="earningsToday">$0.00</h3>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <i class="fas fa-box"></i>
+                            <div class="stat-content">
+                                <span class="stat-label">Entregas Hoy</span>
+                                <h3 id="deliveriesToday">0</h3>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <i class="fas fa-star"></i>
+                            <div class="stat-content">
+                                <span class="stat-label">Rating</span>
+                                <h3 id="driverRating">5.0 ★</h3>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <i class="fas fa-clock"></i>
+                            <div class="stat-content">
+                                <span class="stat-label">Horas Activas</span>
+                                <h3 id="activeHours">0 h</h3>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Active Jobs -->
+                    <div class="driver-section">
+                        <h2><i class="fas fa-tasks"></i> Viajes Disponibles</h2>
+                        <div id="availableJobs" class="jobs-grid">
+                            <!-- Available jobs will be loaded here -->
+                        </div>
+                        <div class="empty-state" id="noJobsState" style="display: none;">
+                            <i class="fas fa-inbox"></i>
+                            <p>No hay viajes disponibles en este momento</p>
+                        </div>
+                    </div>
+
+                    <!-- Current Deliveries -->
+                    <div class="driver-section">
+                        <h2><i class="fas fa-map"></i> Mi Ruta Actual</h2>
+                        <div id="currentDeliveries" class="current-deliveries">
+                            <div class="empty-state">
+                                <i class="fas fa-check-circle"></i>
+                                <p>No tienes entregas activas</p>
+                            </div>
+                        </div>
+                        <div id="routeMap" class="driver-route-map"></div>
+                    </div>
+
+                    <!-- Earnings Summary -->
+                    <div class="driver-section">
+                        <h2><i class="fas fa-chart-line"></i> Resumen de Ganancias</h2>
+                        <div class="earnings-summary">
+                            <div class="earnings-row">
+                                <span>Esta semana</span>
+                                <strong id="weekEarnings">$0.00</strong>
+                            </div>
+                            <div class="earnings-row">
+                                <span>Este mes</span>
+                                <strong id="monthEarnings">$0.00</strong>
+                            </div>
+                            <div class="earnings-row">
+                                <span>Total acumulado</span>
+                                <strong id="totalEarnings">$0.00</strong>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- History Page -->
+        <section id="historyPage" class="page">
+            <div class="container">
+                <div class="page-header">
+                    <h1><i class="fas fa-history"></i> Historial de Entregas</h1>
+                    <div class="filters">
+                        <input type="date" id="filterDate" class="filter-input">
+                        <select id="filterStatus" class="filter-input">
+                            <option value="">Todos los estados</option>
+                            <option value="completed">Completados</option>
+                            <option value="cancelled">Cancelados</option>
+                            <option value="failed">Fallidos</option>
+                        </select>
+                        <input type="text" id="filterSearch" class="filter-input" placeholder="Buscar por dirección o número">
+                    </div>
+                </div>
+
+                <div class="history-container">
+                    <table class="history-table">
+                        <thead>
+                            <tr>
+                                <th>ID del Pedido</th>
+                                <th>Origen → Destino</th>
+                                <th>Fecha</th>
+                                <th>Costo</th>
+                                <th>Estado</th>
+                                <th>Conductor</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="historyBody">
+                            <!-- History items will be loaded here -->
+                        </tbody>
+                    </table>
+
+                    <div class="empty-state" id="noHistoryState" style="display: none;">
+                        <i class="fas fa-inbox"></i>
+                        <p>No hay historial de entregas</p>
+                    </div>
+                </div>
+
+                <!-- Pagination -->
+                <div class="pagination">
+                    <button class="btn-pagination" id="prevPage">← Anterior</button>
+                    <span id="pageInfo">Página 1</span>
+                    <button class="btn-pagination" id="nextPage">Siguiente →</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Statistics Page -->
+        <section id="statsPage" class="page">
+            <div class="container">
+                <div class="page-header">
+                    <h1><i class="fas fa-chart-bar"></i> Estadísticas y Análisis</h1>
+                    <div class="stats-period">
+                        <button class="period-btn active" data-period="week">Esta Semana</button>
+                        <button class="period-btn" data-period="month">Este Mes</button>
+                        <button class="period-btn" data-period="year">Este Año</button>
+                    </div>
+                </div>
+
+                <div class="stats-dashboard">
+                    <!-- Overview Cards -->
+                    <div class="stats-overview">
+                        <div class="overview-card">
+                            <h3>Pedidos Completados</h3>
+                            <div class="overview-value" id="statCompletedOrders">0</div>
+                            <div class="overview-trend positive">
+                                <i class="fas fa-arrow-up"></i> +15%
+                            </div>
+                        </div>
+                        <div class="overview-card">
+                            <h3>Ingresos Totales</h3>
+                            <div class="overview-value" id="statTotalIncome">$0.00</div>
+                            <div class="overview-trend positive">
+                                <i class="fas fa-arrow-up"></i> +22%
+                            </div>
+                        </div>
+                        <div class="overview-card">
+                            <h3>Calificación Promedio</h3>
+                            <div class="overview-value" id="statAvgRating">5.0★</div>
+                            <div class="overview-trend">
+                                <i class="fas fa-check"></i> Excelente
+                            </div>
+                        </div>
+                        <div class="overview-card">
+                            <h3>Tasa de Entrega</h3>
+                            <div class="overview-value" id="statDeliveryRate">100%</div>
+                            <div class="overview-trend positive">
+                                <i class="fas fa-check"></i> Sin problemas
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Charts Section -->
+                    <div class="charts-grid">
+                        <!-- Revenue Chart -->
+                        <div class="chart-card">
+                            <h3><i class="fas fa-dollar-sign"></i> Ingresos</h3>
+                            <div id="revenueChart" class="chart-container">
+                                <canvas id="revenueCanvas"></canvas>
+                            </div>
+                        </div>
+
+                        <!-- Orders Chart -->
+                        <div class="chart-card">
+                            <h3><i class="fas fa-box"></i> Pedidos</h3>
+                            <div id="ordersChart" class="chart-container">
+                                <canvas id="ordersCanvas"></canvas>
+                            </div>
+                        </div>
+
+                        <!-- Service Type Distribution -->
+                        <div class="chart-card">
+                            <h3><i class="fas fa-pie-chart"></i> Tipo de Servicio</h3>
+                            <div id="serviceChart" class="chart-container">
+                                <canvas id="serviceCanvas"></canvas>
+                            </div>
+                        </div>
+
+                        <!-- Ratings Distribution -->
+                        <div class="chart-card">
+                            <h3><i class="fas fa-star"></i> Calificaciones</h3>
+                            <div id="ratingsChart" class="chart-container">
+                                <canvas id="ratingsCanvas"></canvas>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Detailed Statistics -->
+                    <div class="stats-detailed">
+                        <div class="detailed-section">
+                            <h3>Actividad Diaria</h3>
+                            <div class="activity-table">
+                                <div class="activity-row header">
+                                    <span>Día</span>
+                                    <span>Pedidos</span>
+                                    <span>Ingresos</span>
+                                    <span>Tiempo Activo</span>
+                                </div>
+                                <div id="dailyActivity">
+                                    <!-- Daily activity will be loaded here -->
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="detailed-section">
+                            <h3>Zonas Más Activas</h3>
+                            <div class="zones-table">
+                                <div class="zone-row">
+                                    <span>Centro</span>
+                                    <span class="zone-bar">
+                                        <div style="width: 85%;"></div>
+                                    </span>
+                                    <span>42 entregas</span>
+                                </div>
+                                <div class="zone-row">
+                                    <span>Norte</span>
+                                    <span class="zone-bar">
+                                        <div style="width: 65%;"></div>
+                                    </span>
+                                    <span>32 entregas</span>
+                                </div>
+                                <div class="zone-row">
+                                    <span>Sur</span>
+                                    <span class="zone-bar">
+                                        <div style="width: 55%;"></div>
+                                    </span>
+                                    <span>27 entregas</span>
+                                </div>
+                                <div class="zone-row">
+                                    <span>Este</span>
+                                    <span class="zone-bar">
+                                        <div style="width: 40%;"></div>
+                                    </span>
+                                    <span>19 entregas</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="detailed-section">
+                            <h3>Horas Pico</h3>
+                            <div class="peak-hours">
+                                <div class="hour-item">
+                                    <span>6-9 AM</span>
+                                    <div class="hour-bar" style="height: 40%;"></div>
+                                </div>
+                                <div class="hour-item">
+                                    <span>12-2 PM</span>
+                                    <div class="hour-bar" style="height: 85%;"></div>
+                                </div>
+                                <div class="hour-item">
+                                    <span>3-5 PM</span>
+                                    <div class="hour-bar" style="height: 70%;"></div>
+                                </div>
+                                <div class="hour-item">
+                                    <span>6-8 PM</span>
+                                    <div class="hour-bar" style="height: 60%;"></div>
+                                </div>
+                                <div class="hour-item">
+                                    <span>9-11 PM</span>
+                                    <div class="hour-bar" style="height: 35%;"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Export Options -->
+                    <div class="export-section">
+                        <h3>Descargar Reportes</h3>
+                        <div class="export-buttons">
+                            <button class="btn-export" id="btnExportPDF">
+                                <i class="fas fa-file-pdf"></i> Descargar PDF
+                            </button>
+                            <button class="btn-export" id="btnExportCSV">
+                                <i class="fas fa-file-csv"></i> Descargar CSV
+                            </button>
+                            <button class="btn-export" id="btnExportExcel">
+                                <i class="fas fa-file-excel"></i> Descargar Excel
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Profile Page -->
+        <section id="profilePage" class="page">
+            <div class="container">
+                <div class="profile-container">
+                    <div class="profile-sidebar">
+                        <div class="profile-avatar-large">
+                            <img src="assets/default-avatar.png" alt="Avatar" id="profileAvatar" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Ccircle cx=%2250%22 cy=%2250%22 r=%2250%22 fill=%22%23e74c3c%22/%3E%3Ctext x=%2250%22 y=%2260%22 font-size=%2240%22 text-anchor=%22middle%22 fill=%22white%22%3EU%3C/text%3E%3C/svg%3E'">
+                            <button class="btn-edit-avatar">
+                                <i class="fas fa-camera"></i>
+                            </button>
+                        </div>
+                        <h2 id="profileName">Usuario</h2>
+                        <p id="profileEmail">usuario@email.com</p>
+                        <div class="profile-stats">
+                            <div class="stat">
+                                <span class="stat-number" id="totalTrips">0</span>
+                                <span class="stat-label">Viajes</span>
+                            </div>
+                            <div class="stat">
+                                <span class="stat-number" id="profileRating">5.0</span>
+                                <span class="stat-label">Rating</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="profile-content">
+                        <div class="profile-tabs">
+                            <button class="tab-btn active" data-tab="personal">Información Personal</button>
+                            <button class="tab-btn" data-tab="payment">Métodos de Pago</button>
+                            <button class="tab-btn" data-tab="addresses">Direcciones</button>
+                            <button class="tab-btn" data-tab="settings">Configuración</button>
+                        </div>
+
+                        <div class="tab-content active" id="personalTab">
+                            <form class="profile-form">
+                                <div class="form-group">
+                                    <label>Nombre Completo</label>
+                                    <input type="text" id="fullName" value="Usuario Demo">
+                                </div>
+                                <div class="form-group">
+                                    <label>Email</label>
+                                    <input type="email" id="email" value="usuario@email.com">
+                                </div>
+                                <div class="form-group">
+                                    <label>Teléfono</label>
+                                    <input type="tel" id="phone" value="+1234567890">
+                                </div>
+                                <button type="submit" class="btn-submit">Guardar Cambios</button>
+                            </form>
+                        </div>
+
+                        <div class="tab-content" id="paymentTab">
+                            <div class="payment-methods">
+                                <button class="btn-add-payment">
+                                    <i class="fas fa-plus"></i> Agregar Método de Pago
+                                </button>
+                                <div class="payment-cards">
+                                    <div class="payment-card">
+                                        <i class="fas fa-credit-card"></i>
+                                        <div class="card-info">
+                                            <p>•••• •••• •••• 4242</p>
+                                            <span>Visa - Vence 12/25</span>
+                                        </div>
+                                        <button class="btn-delete"><i class="fas fa-trash"></i></button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="tab-content" id="addressesTab">
+                            <div class="saved-addresses">
+                                <button class="btn-add-address">
+                                    <i class="fas fa-plus"></i> Agregar Dirección
+                                </button>
+                                <div class="address-list">
+                                    <div class="address-card">
+                                        <i class="fas fa-home"></i>
+                                        <div class="address-info">
+                                            <h4>Casa</h4>
+                                            <p>Calle Principal 123, Ciudad</p>
+                                        </div>
+                                        <button class="btn-delete"><i class="fas fa-trash"></i></button>
+                                    </div>
+                                    <div class="address-card">
+                                        <i class="fas fa-briefcase"></i>
+                                        <div class="address-info">
+                                            <h4>Trabajo</h4>
+                                            <p>Av. Empresarial 456, Ciudad</p>
+                                        </div>
+                                        <button class="btn-delete"><i class="fas fa-trash"></i></button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="tab-content" id="settingsTab">
+                            <div class="settings-form">
+                                <h3>Notificaciones</h3>
+                                <div class="setting-item">
+                                    <label>
+                                        <input type="checkbox" checked>
+                                        <span>Notificaciones push</span>
+                                    </label>
+                                </div>
+                                <div class="setting-item">
+                                    <label>
+                                        <input type="checkbox" checked>
+                                        <span>Notificaciones por email</span>
+                                    </label>
+                                </div>
+                                <div class="setting-item">
+                                    <label>
+                                        <input type="checkbox">
+                                        <span>Ofertas y promociones</span>
+                                    </label>
+                                </div>
+                                
+                                <h3>Privacidad</h3>
+                                <div class="setting-item">
+                                    <label>
+                                        <input type="checkbox" checked>
+                                        <span>Compartir ubicación en tiempo real</span>
+                                    </label>
+                                </div>
+                                
+                                <button class="btn-submit">Guardar Configuración</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Login Modal -->
+    <div id="loginModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>Iniciar Sesión</h2>
+            <form id="loginForm">
+                <div class="form-group">
+                    <label>Email o Teléfono</label>
+                    <input type="text" id="loginEmail" required>
+                </div>
+                <div class="form-group">
+                    <label>Contraseña</label>
+                    <input type="password" id="loginPassword" required>
+                </div>
+                <button type="submit" class="btn-submit">Iniciar Sesión</button>
+                <p class="form-footer">
+                    ¿No tienes cuenta? <a href="#" id="showRegister">Regístrate</a>
+                </p>
+            </form>
+        </div>
+    </div>
+
+    <!-- Register Modal -->
+    <div id="registerModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>Crear Cuenta</h2>
+            <form id="registerForm">
+                <div class="form-group">
+                    <label>Nombre Completo</label>
+                    <input type="text" id="registerName" required>
+                </div>
+                <div class="form-group">
+                    <label>Email</label>
+                    <input type="email" id="registerEmail" required>
+                </div>
+                <div class="form-group">
+                    <label>Teléfono</label>
+                    <input type="tel" id="registerPhone" required>
+                </div>
+                <div class="form-group">
+                    <label>Contraseña</label>
+                    <input type="password" id="registerPassword" required>
+                </div>
+                <button type="submit" class="btn-submit">Registrarse</button>
+                <p class="form-footer">
+                    ¿Ya tienes cuenta? <a href="#" id="showLogin">Inicia sesión</a>
+                </p>
+            </form>
+        </div>
+    </div>
+
+    <!-- Trip Details Modal -->
+    <div id="tripModal" class="modal">
+        <div class="modal-content trip-modal">
+            <span class="close">&times;</span>
+            <div id="tripDetails">
+                <!-- Trip details will be loaded here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Live Tracking Modal -->
+    <div id="trackingModal" class="modal">
+        <div class="modal-content tracking-modal">
+            <span class="close">&times;</span>
+            <h2><i class="fas fa-location-arrow"></i> Seguimiento en Tiempo Real</h2>
+            <div id="trackingContent">
+                <div id="trackingMap" class="tracking-map"></div>
+                <div class="tracking-info">
+                    <div class="driver-card">
+                        <img src="" alt="Conductor" id="trackingDriverAvatar" class="driver-avatar">
+                        <div class="driver-details">
+                            <h3 id="trackingDriverName">Buscando conductor...</h3>
+                            <p id="trackingDriverVehicle"></p>
+                            <div class="driver-rating">
+                                <span id="trackingDriverRating"></span>
+                            </div>
+                        </div>
+                        <a href="#" id="trackingDriverPhone" class="btn-call" style="display: none;">
+                            <i class="fas fa-phone"></i>
+                        </a>
+                    </div>
+                    <div class="tracking-status">
+                        <div class="status-timeline">
+                            <div class="status-step" data-step="searching">
+                                <div class="step-icon"><i class="fas fa-search"></i></div>
+                                <div class="step-text">
+                                    <strong>Buscando conductor</strong>
+                                    <span class="step-time"></span>
+                                </div>
+                            </div>
+                            <div class="status-step" data-step="assigned">
+                                <div class="step-icon"><i class="fas fa-user-check"></i></div>
+                                <div class="step-text">
+                                    <strong>Conductor asignado</strong>
+                                    <span class="step-time"></span>
+                                </div>
+                            </div>
+                            <div class="status-step" data-step="pickup">
+                                <div class="step-icon"><i class="fas fa-box"></i></div>
+                                <div class="step-text">
+                                    <strong>Recogiendo paquete</strong>
+                                    <span class="step-time"></span>
+                                </div>
+                            </div>
+                            <div class="status-step" data-step="in-transit">
+                                <div class="step-icon"><i class="fas fa-shipping-fast"></i></div>
+                                <div class="step-text">
+                                    <strong>En camino</strong>
+                                    <span class="step-time"></span>
+                                </div>
+                            </div>
+                            <div class="status-step" data-step="delivered">
+                                <div class="step-icon"><i class="fas fa-check-circle"></i></div>
+                                <div class="step-text">
+                                    <strong>Entregado</strong>
+                                    <span class="step-time"></span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="tracking-stats">
+                        <div class="stat-item">
+                            <i class="fas fa-route"></i>
+                            <span>Distancia restante</span>
+                            <strong id="trackingDistance">Calculando...</strong>
+                        </div>
+                        <div class="stat-item">
+                            <i class="fas fa-clock"></i>
+                            <span>Tiempo estimado</span>
+                            <strong id="trackingTime">Calculando...</strong>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notification Toast -->
+    <div id="toast" class="toast"></div>
+
+    <script src="app.js"></script>
+</body>
+</html>
