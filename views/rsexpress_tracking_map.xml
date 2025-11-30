@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+        
+        <!-- ================================================ -->
+        <!-- VISTA UNIVERSAL: Tracking GPS en Mapa          -->
+        <!-- ================================================ -->
+        
+        <record id="view_rsexpress_tracking_map" model="ir.ui.view">
+            <field name="name">rsexpress.tracking.map</field>
+            <field name="model">fleet.vehicle</field>
+            <field name="arch" type="xml">
+                <form string="🗺️ Tracking GPS Universal" create="false" edit="false" delete="false">
+                    <sheet>
+                        <div class="oe_title">
+                            <h1>🛰️ Tracking GPS en Tiempo Real</h1>
+                        </div>
+                        
+                        <group>
+                            <div class="alert alert-info" role="alert">
+                                <strong>📍 Mapa de Tracking GPS</strong><br/>
+                                Muestra todos los vehículos con posición GPS actualizada.<br/>
+                                <small>Auto-refresh cada 30 segundos</small>
+                            </div>
+                        </group>
+                        
+                        <group>
+                            <div id="rsexpress_tracking_map" style="width: 100%; height: 600px; border: 2px solid #ddd; border-radius: 8px;">
+                                <!-- Mapa Leaflet se renderiza aquí por JavaScript -->
+                            </div>
+                        </group>
+                        
+                    </sheet>
+                </form>
+            </field>
+        </record>
+        
+        <!-- ================================================ -->
+        <!-- ACCIÓN: Abrir Mapa de Tracking                 -->
+        <!-- ================================================ -->
+        
+        <record id="action_rsexpress_tracking_map" model="ir.actions.act_window">
+            <field name="name">🗺️ Tracking GPS</field>
+            <field name="res_model">fleet.vehicle</field>
+            <field name="view_mode">form</field>
+            <field name="view_id" ref="view_rsexpress_tracking_map"/>
+            <field name="target">new</field>
+            <field name="context">{}</field>
+        </record>
+        
+        <!-- ================================================ -->
+        <!-- MENÚ: Tracking GPS                              -->
+        <!-- ================================================ -->
+        
+        <menuitem 
+            id="menu_rsexpress_tracking_map"
+            name="🗺️ Tracking GPS"
+            parent="fleet.fleet_vehicles"
+            action="action_rsexpress_tracking_map"
+            sequence="25"
+            groups="base.group_user"/>
+        
+    </data>
+</odoo>

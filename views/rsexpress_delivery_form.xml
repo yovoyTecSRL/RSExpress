@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Vista de Formulario - Pedidos RSExpress -->
+    <record id="view_rsexpress_delivery_form" model="ir.ui.view">
+        <field name="name">rsexpress.delivery.order.form</field>
+        <field name="model">rsexpress.delivery.order</field>
+        <field name="arch" type="xml">
+            <form string="Pedido de Entrega">
+                <header>
+                    <!-- Botones de Estado -->
+                    <button name="action_assign" 
+                            string="Asignar" 
+                            type="object" 
+                            class="oe_highlight"
+                            invisible="state != 'new'"/>
+                    
+                    <button name="action_on_route" 
+                            string="Marcar En Ruta" 
+                            type="object" 
+                            class="oe_highlight"
+                            invisible="state != 'assigned'"/>
+                    
+                    <button name="action_delivered" 
+                            string="Entregado" 
+                            type="object" 
+                            class="btn-success"
+                            invisible="state != 'on_route'"/>
+                    
+                    <button name="action_failed" 
+                            string="Fallido" 
+                            type="object" 
+                            class="btn-danger"
+                            invisible="state not in ('assigned', 'on_route')"/>
+                    
+                    <button name="action_cancel" 
+                            string="Cancelar" 
+                            type="object"
+                            invisible="state in ('delivered', 'failed')"/>
+                    
+                    <!-- Barra de Estado -->
+                    <field name="state" widget="statusbar" 
+                           statusbar_visible="new,assigned,on_route,delivered"/>
+                </header>
+                
+                <sheet>
+                    <div class="oe_title">
+                        <h1>
+                            <field name="name" readonly="1"/>
+                        </h1>
+                    </div>
+                    
+                    <group>
+                        <group string="Información del Cliente">
+                            <field name="customer_name" placeholder="Nombre completo del cliente"/>
+                            <field name="customer_phone" widget="phone" placeholder="+507 6000-0000"/>
+                        </group>
+                        
+                        <group string="Asignación">
+                            <field name="vehicle_id" placeholder="Seleccionar vehículo (opcional)"/>
+                            <field name="create_date" readonly="1"/>
+                        </group>
+                    </group>
+                    
+                    <group>
+                        <group string="Direcciones">
+                            <field name="pickup_address" placeholder="Calle, edificio, número..."/>
+                            <field name="delivery_address" placeholder="Calle, edificio, número..."/>
+                        </group>
+                    </group>
+                    
+                    <group string="Descripción del Pedido">
+                        <field name="task_description" 
+                               placeholder="Describe el pedido: qué se debe recoger, instrucciones especiales, etc."
+                               nolabel="1"/>
+                    </group>
+                </sheet>
+                
+                <!-- Chatter -->
+                <div class="oe_chatter">
+                    <field name="message_follower_ids"/>
+                    <field name="activity_ids"/>
+                    <field name="message_ids"/>
+                </div>
+            </form>
+        </field>
+    </record>
+</odoo>

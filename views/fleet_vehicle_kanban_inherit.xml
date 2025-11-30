@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="orbix_fleet_kanban_banner" model="ir.ui.view">
+        <field name="name">orbix.fleet.vehicle.kanban.banner</field>
+        <field name="model">fleet.vehicle</field>
+        <field name="inherit_id" ref="fleet.fleet_vehicle_view_kanban"/>
+
+        <field name="arch" type="xml">
+
+            <!-- Agregar banner en la parte superior del kanban -->
+            <xpath expr="//kanban" position="attributes">
+                <attribute name="banner_route">/web/static/src/img/banner.png</attribute>
+            </xpath>
+            
+            <!-- Insertar el div del banner antes de las templates -->
+            <xpath expr="//templates" position="before">
+                <div class="alert alert-info text-center" style="margin: 0; padding: 14px;
+                    background: linear-gradient(90deg, #6a3c76, #875A7B) !important;
+                    color: white !important; border: none; border-radius: 0;
+                    font-size: 20px; font-weight: 600;">
+                    RSExpress Logistics • Motor Cognitivo Órbix
+                </div>
+            </xpath>
+
+        </field>
+    </record>
+</odoo>

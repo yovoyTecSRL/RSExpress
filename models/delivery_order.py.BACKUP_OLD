@@ -1,0 +1,520 @@
+# -*- coding: utf-8 -*-
+# License LGPL-3.0
+#
+# ⚠️ ARCHIVO DESACTIVADO - BACKUP DEL MODELO VIEJO
+# ⚠️ NO USAR - Reemplazado por rsexpress_delivery_order.py
+#
+# Este archivo contiene la versión compleja del modelo con:
+# - 9 estados (vs 6 en el modelo actual)
+# - Integración WhatsApp Respond.io (TODO)
+# - Integración Traccar GPS (TODO)
+# - Firma digital y fotos de entrega
+# - Múltiples métodos de transición
+#
+# ERRORES DETECTADOS EN AUDITORÍA:
+# 1. driver_id usa res.partner (debería ser hr.employee)
+# 2. Modelo duplicado (_name = "rsexpress.delivery.order")
+# 3. Uso de _() en lambda (no funciona correctamente)
+# 4. Llamadas a métodos de vehículo sin validación
+#
+# FECHA BACKUP: 30/11/2025
+# AUDITOR: Experto Senior Odoo 19
+
+from odoo import models, fields, api, _
+from odoo.exceptions import UserError, ValidationError
+from datetime import datetime
+
+
+class RSExpressDeliveryOrder(models.Model):
+    _name = "rsexpress.delivery.order"
+    _description = "Orden de Entrega RSExpress"
+    _inherit = ["mail.thread", "mail.activity.mixin"]
+    _order = "scheduled_time desc, id desc"
+
+    # ========== INFORMACIÓN BÁSICA ==========
+    order_code = fields.Char(
+        string="Código de Orden",
+        required=True,
+        copy=False,
+        readonly=True,
+        index=True,
+        default='Nuevo'  # CORREGIDO: Removido _() del lambda
+    )
+    
+    name = fields.Char(
+        string="Referencia",
+        compute="_compute_name",
+        store=True
+    )
+
+    # ========== ASIGNACIÓN ==========
+    vehicle_id = fields.Many2one(
+        "fleet.vehicle",
+        string="Vehículo Asignado",
+        tracking=True,
+        ondelete='restrict'
+    )
+    
+    driver_id = fields.Many2one(
+        "hr.employee",  # CORREGIDO: Cambio de res.partner a hr.employee
+        string="Conductor / Mensajero",
+        tracking=True,
+        # REMOVIDO: domain de res.partner ya no aplica
+    )
+
+    # ========== DIRECCIONES ==========
+    pickup_address = fields.Char(
+        string="Dirección de Recogida",
+        required=True,
+        tracking=True
+    )
+    
+    pickup_latitude = fields.Float(
+        string="Latitud Recogida",
+        digits=(10, 7)
+    )
+    
+    pickup_longitude = fields.Float(
+        string="Longitud Recogida",
+        digits=(10, 7)
+    )
+    
+    delivery_address = fields.Char(
+        string="Dirección de Entrega",
+        required=True,
+        tracking=True
+    )
+    
+    delivery_latitude = fields.Float(
+        string="Latitud Entrega",
+        digits=(10, 7)
+    )
+    
+    delivery_longitude = fields.Float(
+        string="Longitud Entrega",
+        digits=(10, 7)
+    )
+
+    # ========== TIEMPOS ==========
+    scheduled_time = fields.Datetime(
+        string="Fecha Programada",
+        tracking=True,
+        required=True,
+        default=fields.Datetime.now
+    )
+    
+    start_time = fields.Datetime(
+        string="Inicio del Viaje",
+        tracking=True,
+        readonly=True
+    )
+    
+    end_time = fields.Datetime(
+        string="Entrega Finalizada",
+        tracking=True,
+        readonly=True
+    )
+    
+    duration = fields.Float(
+        string="Duración (horas)",
+        compute="_compute_duration",
+        store=True,
+        digits=(8, 2)
+    )
+
+    # ========== CLIENTE ==========
+    customer_name = fields.Char(
+        string="Nombre del Cliente",
+        required=True,
+        tracking=True
+    )
+    
+    customer_phone = fields.Char(
+        string="Teléfono del Cliente",
+        tracking=True
+    )
+    
+    customer_email = fields.Char(
+        string="Email del Cliente"
+    )
+
+    # ========== PAQUETE ==========
+    package_description = fields.Text(
+        string="Descripción del Paquete"
+    )
+    
+    package_weight = fields.Float(
+        string="Peso (kg)",
+        digits=(8, 2)
+    )
+    
+    package_value = fields.Monetary(
+        string="Valor Declarado",
+        currency_field='currency_id'
+    )
+    
+    currency_id = fields.Many2one(
+        'res.currency',
+        string='Moneda',
+        default=lambda self: self.env.company.currency_id
+    )
+
+    # ========== ESTADO ==========
+    state = fields.Selection([
+        ('new', 'Nueva Orden'),
+        ('assigned', 'Asignada'),
+        ('pickup', 'En Ruta de Recogida'),
+        ('package', 'Paquete Recogido'),
+        ('delivering', 'En Camino de Entrega'),
+        ('delivered', 'Entregado'),
+        ('incident', 'Incidencia'),
+        ('failed', 'Intento Fallido'),
+        ('cancelled', 'Cancelado'),
+    ], string="Estado", default='new', required=True, tracking=True)
+
+    # ========== NOTAS Y OBSERVACIONES ==========
+    notes = fields.Text(
+        string="Notas Internas"
+    )
+    
+    delivery_notes = fields.Text(
+        string="Notas de Entrega",
+        help="Observaciones del mensajero al momento de entregar"
+    )
+    
+    incident_description = fields.Text(
+        string="Descripción de Incidencia"
+    )
+
+    # ========== FIRMA Y EVIDENCIA ==========
+    signature = fields.Binary(
+        string="Firma del Cliente",
+        attachment=True
+    )
+    
+    delivery_proof_image = fields.Binary(
+        string="Foto de Entrega",
+        attachment=True
+    )
+
+    # ========== CAMPOS COMPUTADOS ==========
+    @api.depends('order_code', 'customer_name')
+    def _compute_name(self):
+        for record in self:
+            if record.order_code and record.order_code != 'Nuevo':  # CORREGIDO: Sin _()
+                record.name = f"{record.order_code} - {record.customer_name or 'Sin nombre'}"
+            else:
+                record.name = f"Orden #{record.id or 'Nueva'}"
+
+    @api.depends('start_time', 'end_time')
+    def _compute_duration(self):
+        for record in self:
+            if record.start_time and record.end_time:
+                delta = record.end_time - record.start_time
+                record.duration = delta.total_seconds() / 3600
+            else:
+                record.duration = 0.0
+
+    # ========== CONSTRAINT ==========
+    _sql_constraints = [
+        ('order_code_unique', 'UNIQUE(order_code)',
+         'El código de orden debe ser único!')
+    ]
+
+    # ========== MÉTODOS DE CREACIÓN ==========
+    @api.model_create_multi
+    def create(self, vals_list):
+        for vals in vals_list:
+            if vals.get('order_code', 'Nuevo') == 'Nuevo':  # CORREGIDO: Sin _()
+                vals['order_code'] = self.env['ir.sequence'].next_by_code('rsexpress.delivery.order') or 'Nuevo'
+        return super().create(vals_list)
+
+    # ========== MÉTODOS DE CAMBIO DE ESTADO ==========
+
+    def action_assign(self):
+        """Asigna la orden a un vehículo y conductor"""
+        for record in self:
+            if not record.vehicle_id:
+                raise UserError(_("Debe asignar un vehículo antes de continuar"))
+            
+            if record.state != 'new':
+                raise UserError(_("Solo se pueden asignar órdenes nuevas"))
+            
+            record.state = 'assigned'
+            record.message_post(
+                body=_("📋 Orden asignada a vehículo %s") % record.vehicle_id.license_plate,
+                subject=_("Orden Asignada")
+            )
+            
+            # CORREGIDO: Validación antes de llamar método
+            if record.vehicle_id and hasattr(record.vehicle_id, 'action_set_assigned'):
+                record.vehicle_id.action_set_assigned()
+            
+            # Notificar cliente
+            record.send_whatsapp_notification(
+                f"Tu orden {record.order_code} ha sido asignada. "
+                f"Mensajero: {record.driver_id.name or 'Por confirmar'}"
+            )
+
+    def action_pickup(self):
+        """Marca la orden como en ruta de recogida"""
+        for record in self:
+            if record.state != 'assigned':
+                raise UserError(_("La orden debe estar asignada"))
+            
+            record.state = 'pickup'
+            record.start_time = fields.Datetime.now()
+            record.message_post(
+                body=_("🚗 Mensajero en ruta hacia punto de recogida"),
+                subject=_("En Ruta")
+            )
+            
+            # CORREGIDO: Validación antes de llamar método
+            if record.vehicle_id and hasattr(record.vehicle_id, 'action_set_on_route'):
+                record.vehicle_id.action_set_on_route()
+            
+            # Notificar cliente
+            record.send_whatsapp_notification(
+                f"El mensajero está en camino a recoger tu paquete. Orden: {record.order_code}"
+            )
+
+    def action_package(self):
+        """Marca el paquete como recogido"""
+        for record in self:
+            if record.state != 'pickup':
+                raise UserError(_("El mensajero debe estar en ruta de recogida"))
+            
+            record.state = 'package'
+            record.message_post(
+                body=_("📦 Paquete recogido exitosamente"),
+                subject=_("Paquete Recogido")
+            )
+            
+            # CORREGIDO: Validación antes de llamar método
+            if record.vehicle_id and hasattr(record.vehicle_id, 'action_set_picked'):
+                record.vehicle_id.action_set_picked()
+            
+            # Notificar cliente
+            record.send_whatsapp_notification(
+                f"Tu paquete ha sido recogido y está en camino. Orden: {record.order_code}"
+            )
+
+    def action_delivering(self):
+        """Marca la orden como en camino de entrega"""
+        for record in self:
+            if record.state != 'package':
+                raise UserError(_("Debe tener el paquete recogido"))
+            
+            record.state = 'delivering'
+            record.message_post(
+                body=_("🚚 En camino de entrega al cliente"),
+                subject=_("En Entrega")
+            )
+            
+            # CORREGIDO: Validación antes de llamar método
+            if record.vehicle_id and hasattr(record.vehicle_id, 'action_set_delivering'):
+                record.vehicle_id.action_set_delivering()
+            
+            # Notificar cliente
+            record.send_whatsapp_notification(
+                f"Tu paquete está en camino. Llegaremos pronto. Orden: {record.order_code}"
+            )
+
+    def action_delivered(self):
+        """Marca la orden como entregada exitosamente"""
+        for record in self:
+            if record.state != 'delivering':
+                raise UserError(_("Debe estar en proceso de entrega"))
+            
+            record.state = 'delivered'
+            record.end_time = fields.Datetime.now()
+            record.message_post(
+                body=_("✅ Orden entregada exitosamente"),
+                subject=_("Entrega Completada")
+            )
+            
+            # CORREGIDO: Validación antes de llamar método
+            if record.vehicle_id and hasattr(record.vehicle_id, 'action_set_delivered_ok'):
+                record.vehicle_id.action_set_delivered_ok()
+            
+            # Notificar cliente
+            record.send_whatsapp_notification(
+                f"✅ Tu paquete ha sido entregado. Gracias por usar RSExpress. Orden: {record.order_code}"
+            )
+
+    def action_incident(self):
+        """Marca la orden con incidencia"""
+        for record in self:
+            if record.state in ['delivered', 'cancelled']:
+                raise UserError(_("No se puede marcar incidencia en órdenes finalizadas"))
+            
+            record.state = 'incident'
+            record.message_post(
+                body=_("⚠️ Incidencia reportada: %s") % (record.incident_description or 'Sin detalles'),
+                subject=_("Incidencia Reportada")
+            )
+            
+            # Notificar cliente
+            record.send_whatsapp_notification(
+                f"Hemos detectado una incidencia con tu orden {record.order_code}. "
+                f"Nuestro equipo está trabajando en solucionarlo."
+            )
+
+    def action_failed(self):
+        """Marca el intento de entrega como fallido"""
+        for record in self:
+            if record.state != 'delivering':
+                raise UserError(_("Debe estar en proceso de entrega"))
+            
+            record.state = 'failed'
+            record.end_time = fields.Datetime.now()
+            record.message_post(
+                body=_("❌ Intento de entrega fallido"),
+                subject=_("Entrega Fallida")
+            )
+            
+            # CORREGIDO: Validación antes de llamar método
+            if record.vehicle_id and hasattr(record.vehicle_id, 'action_set_failed'):
+                record.vehicle_id.action_set_failed()
+            
+            # Notificar cliente
+            record.send_whatsapp_notification(
+                f"No pudimos completar la entrega de tu orden {record.order_code}. "
+                f"Nos pondremos en contacto contigo."
+            )
+
+    def action_cancel(self):
+        """Cancela la orden"""
+        for record in self:
+            if record.state in ['delivered']:
+                raise UserError(_("No se puede cancelar una orden ya entregada"))
+            
+            record.state = 'cancelled'
+            record.message_post(
+                body=_("🚫 Orden cancelada"),
+                subject=_("Orden Cancelada")
+            )
+            
+            # CORREGIDO: Validación antes de llamar método
+            if record.vehicle_id and hasattr(record.vehicle_id, 'action_set_cancelled'):
+                if hasattr(record.vehicle_id, 'x_operational_status') and record.vehicle_id.x_operational_status != 'available':
+                    record.vehicle_id.action_set_cancelled()
+            
+            # Notificar cliente
+            record.send_whatsapp_notification(
+                f"Tu orden {record.order_code} ha sido cancelada."
+            )
+
+    # ========== INTEGRACIÓN WHATSAPP RESPOND.IO ==========
+
+    def send_whatsapp_notification(self, message):
+        """
+        Envía notificación WhatsApp vía Respond.io
+        TODO: Implementar integración con API Respond.io
+        """
+        self.ensure_one()
+        
+        # Por ahora solo registra en chatter
+        self.message_post(
+            body=_("📱 Notificación WhatsApp: %s") % message,
+            subject=_("Notificación Cliente")
+        )
+        
+        # TODO: Implementar llamada a API Respond.io
+        # import requests
+        # api_url = self.env['ir.config_parameter'].sudo().get_param('rsexpress.respondio_api_url')
+        # api_key = self.env['ir.config_parameter'].sudo().get_param('rsexpress.respondio_api_key')
+        # 
+        # if api_url and api_key and self.customer_phone:
+        #     payload = {
+        #         'phone': self.customer_phone,
+        #         'message': message,
+        #         'channel': 'whatsapp'
+        #     }
+        #     headers = {'Authorization': f'Bearer {api_key}'}
+        #     response = requests.post(api_url, json=payload, headers=headers)
+        
+        return True
+
+    # ========== INTEGRACIÓN TRACCAR GPS ==========
+
+    def update_gps_from_traccar(self, data):
+        """
+        Actualiza coordenadas GPS desde webhook Traccar
+        TODO: Implementar webhook listener
+        """
+        self.ensure_one()
+        
+        # Placeholder para recibir datos de Traccar
+        # Ejemplo de estructura de datos esperada:
+        # data = {
+        #     'latitude': 9.9281,
+        #     'longitude': -84.0907,
+        #     'speed': 45.5,
+        #     'timestamp': '2025-11-30T10:30:00Z'
+        # }
+        
+        if self.vehicle_id and 'latitude' in data and 'longitude' in data:
+            # CORREGIDO: Validación antes de llamar método
+            if hasattr(self.vehicle_id, 'update_gps'):
+                self.vehicle_id.update_gps(
+                    lat=data['latitude'],
+                    lon=data['longitude']
+                )
+                
+                self.message_post(
+                    body=_("📍 GPS actualizado: Lat %.6f, Lon %.6f") % (data['latitude'], data['longitude']),
+                    subject=_("Actualización GPS")
+                )
+        
+        return True
+
+    # ========== MÉTODOS AUXILIARES ==========
+
+    def action_view_on_map(self):
+        """Abre la ruta en Google Maps"""
+        self.ensure_one()
+        
+        if not self.pickup_latitude or not self.delivery_latitude:
+            raise UserError(_("Debe configurar las coordenadas GPS de recogida y entrega"))
+        
+        maps_url = (
+            f"https://www.google.com/maps/dir/"
+            f"{self.pickup_latitude},{self.pickup_longitude}/"
+            f"{self.delivery_latitude},{self.delivery_longitude}"
+        )
+        
+        return {
+            'type': 'ir.actions.act_url',
+            'url': maps_url,
+            'target': 'new',
+        }
+
+    def action_resend_notification(self):
+        """Reenvía notificación al cliente"""
+        for record in self:
+            state_messages = {
+                'new': 'Tu orden ha sido registrada',
+                'assigned': 'Tu orden ha sido asignada a un mensajero',
+                'pickup': 'El mensajero está en camino a recoger',
+                'package': 'Tu paquete ha sido recogido',
+                'delivering': 'Tu paquete está en camino',
+                'delivered': 'Tu paquete ha sido entregado',
+                'incident': 'Hay una incidencia con tu orden',
+                'failed': 'No pudimos completar la entrega',
+                'cancelled': 'Tu orden ha sido cancelada',
+            }
+            
+            message = state_messages.get(record.state, 'Actualización de tu orden')
+            record.send_whatsapp_notification(f"{message}. Orden: {record.order_code}")
+        
+        return {
+            'type': 'ir.actions.client',
+            'tag': 'display_notification',
+            'params': {
+                'title': _('Notificación Enviada'),
+                'message': _('Se ha reenviado la notificación al cliente'),
+                'type': 'success',
+                'sticky': False,
+            }
+        }

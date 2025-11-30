@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+        
+        <!-- ================================================ -->
+        <!-- VISTA FORMULARIO: Campos Traccar GPS            -->
+        <!-- ================================================ -->
+        
+        <record id="view_fleet_vehicle_form_traccar_fields" model="ir.ui.view">
+            <field name="name">fleet.vehicle.form.traccar.inherit</field>
+            <field name="model">fleet.vehicle</field>
+            <field name="inherit_id" ref="fleet.fleet_vehicle_view_form"/>
+            <field name="arch" type="xml">
+                
+                <!-- Agregar página "GPS Tracking" en el notebook -->
+                <xpath expr="//notebook" position="inside">
+                    <page string="🛰️ GPS Tracking (Traccar)" name="traccar_gps">
+                        
+                        <group string="Configuración Traccar">
+                            <group>
+                                <field name="x_traccar_device_id" 
+                                       placeholder="Ej: 123" 
+                                       help="ID del dispositivo en Traccar Server"/>
+                                <field name="x_traccar_unique_id" 
+                                       placeholder="Ej: 123456789012345 (IMEI)" 
+                                       help="IMEI o identificador único del GPS"/>
+                            </group>
+                            <group>
+                                <field name="x_traccar_status" widget="badge"/>
+                                <button name="action_open_traccar_map" 
+                                        type="object" 
+                                        string="Ver en Traccar" 
+                                        class="btn-primary"
+                                        invisible="not x_traccar_device_id"/>
+                            </group>
+                        </group>
+                        
+                        <group string="Última Posición GPS">
+                            <group>
+                                <field name="x_last_latitude" readonly="1"/>
+                                <field name="x_last_longitude" readonly="1"/>
+                                <field name="x_last_speed" readonly="1"/>
+                            </group>
+                            <group>
+                                <field name="x_last_update" readonly="1"/>
+                                <field name="x_last_address" readonly="1"/>
+                            </group>
+                        </group>
+                        
+                        <group>
+                            <button name="action_sync_traccar_now" 
+                                    type="object" 
+                                    string="Sincronizar GPS Ahora" 
+                                    class="btn-success"
+                                    invisible="not x_traccar_device_id"/>
+                        </group>
+                        
+                        <div class="alert alert-info" role="alert" invisible="x_traccar_device_id">
+                            <strong>Sin configuración Traccar</strong><br/>
+                            Para habilitar tracking GPS:
+                            <ol>
+                                <li>Registra el dispositivo GPS en Traccar Server</li>
+                                <li>Obtén el Device ID desde Traccar UI</li>
+                                <li>Completa los campos arriba</li>
+                                <li>Click en "Sincronizar GPS Ahora"</li>
+                            </ol>
+                            Ver documentación en README_TRACCAR.md
+                        </div>
+                        
+                    </page>
+                </xpath>
+                
+            </field>
+        </record>
+        
+    </data>
+</odoo>

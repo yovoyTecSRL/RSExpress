@@ -1,0 +1,85 @@
+{
+    "$schema": "https://cdn.statically.io/gh/nguyenngoclongdev/cdn/main/schema/v11/terminal-keeper.json",
+    "theme": "tribe",
+    "active": "default",
+    "activateOnStartup": true,
+    "keepExistingTerminals": true,
+    "sessions": {
+        "default": [
+            {
+                "name": "hello",
+                "autoExecuteCommands": true,
+                "icon": "person",
+                "color": "terminal.ansiGreen",
+                "commands": [
+                    "echo 'Hello Orbix Developer 🚀'"
+                ]
+            },
+            {
+                "name": "docker:ros",
+                "icon": "gear",
+                "color": "terminal.ansiBlue",
+                "commands": [
+                    "echo 'ROS session loaded'"
+                ]
+            },
+            {
+                "name": "docker:k8s",
+                "icon": "cloud",
+                "color": "terminal.ansiCyan",
+                "commands": [
+                    "echo 'Kubernetes session loaded'"
+                ]
+            },
+            {
+                "name": "docker:nats",
+                "icon": "broadcast",
+                "color": "terminal.ansiMagenta",
+                "commands": [
+                    "echo 'NATS Messaging Ready'"
+                ]
+            },
+            {
+                "name": "docker:fleet",
+                "icon": "dashboard",
+                "color": "terminal.ansiYellow",
+                "commands": [
+                    "echo 'Fleet container session loaded'"
+                ]
+            }
+        ],
+        "saved-session": [
+            {
+                "name": "connect",
+                "autoExecuteCommands": false,
+                "icon": "plug",
+                "color": "terminal.ansiGreen",
+                "commands": [
+                    "echo 'Connected to Orbix DevOps Session'"
+                ]
+            }
+        ]
+    },
+    "models": {
+        "delivery_order": {
+            "update_gps_from_traccar": {
+                "description": "Actualiza coordenadas GPS desde webhook Traccar",
+                "placeholder": "Placeholder para recibir datos de Traccar"
+            }
+        }
+    },
+    "integrations": {
+        "traccar": {
+            "gps": {
+                "description": "Integración Traccar GPS",
+                "placeholder": "Mapa en tiempo real • Próximamente con Leaflet + Traccar API"
+            }
+        }
+    },
+    "notificator": {
+        "types": "web",
+        "web": {
+            "url": "http://rsexpress.online:8069/api/private/traccar/webhook"
+        }
+    }
+}

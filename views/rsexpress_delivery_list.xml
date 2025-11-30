@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Vista de Lista - Pedidos RSExpress -->
+    <record id="view_rsexpress_delivery_list" model="ir.ui.view">
+        <field name="name">rsexpress.delivery.order.list</field>
+        <field name="model">rsexpress.delivery.order</field>
+        <field name="arch" type="xml">
+            <list string="Pedidos de Entrega"
+                  decoration-info="state == 'new'"
+                  decoration-primary="state == 'assigned'"
+                  decoration-warning="state == 'on_route'"
+                  decoration-success="state == 'delivered'"
+                  decoration-danger="state == 'failed'">
+                
+                <field name="name" string="Código"/>
+                <field name="pickup_address" string="Dirección Recogida"/>
+                <field name="delivery_address" string="Dirección Entrega"/>
+                <field name="customer_name" string="Cliente"/>
+                <field name="state" string="Estado" widget="badge"/>
+                <field name="vehicle_id" string="Vehículo" optional="show"/>
+                <field name="create_date" string="Fecha Creación"/>
+            </list>
+        </field>
+    </record>
+</odoo>

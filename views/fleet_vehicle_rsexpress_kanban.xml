@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Vista Kanban RSExpress con KPIs -->
+    <record id="fleet_vehicle_rsexpress_kanban_view" model="ir.ui.view">
+        <field name="name">fleet.vehicle.rsexpress.kanban</field>
+        <field name="model">fleet.vehicle</field>
+        <field name="inherit_id" ref="fleet.fleet_vehicle_view_kanban"/>
+        <field name="arch" type="xml">
+            
+            <!-- Agregar campos necesarios al kanban -->
+            <xpath expr="//field[@name='license_plate']" position="after">
+                <field name="x_internal_code"/>
+                <field name="x_operational_status"/>
+                <field name="x_driver_id"/>
+                <field name="x_orders_completed"/>
+                <field name="x_success_rate"/>
+                <field name="x_distance_today"/>
+                <field name="x_last_gps_ping"/>
+            </xpath>
+
+        </field>
+    </record>
+</odoo>

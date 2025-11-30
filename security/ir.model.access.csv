@@ -1,0 +1,5 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_fleet_vehicle_rsexpress_user,access.fleet.vehicle.rsexpress.user,fleet.model_fleet_vehicle,base.group_user,1,1,1,0
+access_fleet_vehicle_rsexpress_system,access.fleet.vehicle.rsexpress.system,fleet.model_fleet_vehicle,base.group_system,1,1,1,1
+access_rsexpress_delivery_order_user,access.rsexpress.delivery.order.user,model_rsexpress_delivery_order,base.group_user,1,1,1,1
+access_rsexpress_delivery_order_system,access.rsexpress.delivery.order.system,model_rsexpress_delivery_order,base.group_system,1,1,1,1

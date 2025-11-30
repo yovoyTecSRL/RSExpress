@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Vista limpia de vehículos - Sin botones de pedidos -->
+    <record id="fleet_vehicle_rsexpress_buttons_view" model="ir.ui.view">
+        <field name="name">fleet.vehicle.rsexpress.buttons</field>
+        <field name="model">fleet.vehicle</field>
+        <field name="inherit_id" ref="fleet.fleet_vehicle_view_form"/>
+        <field name="arch" type="xml">
+            <!-- No se agregan botones ni campos, se mantiene vista estándar -->
+        </field>
+    </record>
+</odoo>

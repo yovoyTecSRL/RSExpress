@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="orbix_fleet_title_view" model="ir.ui.view">
+        <field name="name">orbix.fleet.title.view</field>
+        <field name="model">fleet.vehicle</field>
+        <field name="inherit_id" ref="fleet.fleet_vehicle_view_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='license_plate']" position="after">
+                <h2 class="text-center" style="color: #875A7B; margin: 10px 0;">
+                    RSExpress by Sistemas Órbix
+                </h2>
+            </xpath>
+        </field>
+    </record>
+</odoo>

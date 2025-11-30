@@ -1,0 +1,86 @@
+
+Dashboard de Flota
+Campos
+Buscar…
+1-80 / 123
+
+account_move_ids	Movimiento de cuenta	Vehículo	one2many	Campo base	 	 	 	account.move
+acquisition_date	Fecha de registro	Vehículo	fecha	Campo base	 	 	 	
+active	Activo	Vehículo	booleano	Campo base	 	 	 	
+activity_calendar_event_id	Siguiente evento en el calendario de actividades	Vehículo	many2one	Campo base	 	 	 	calendar.event
+activity_date_deadline	Siguiente fecha límite de la actividad	Vehículo	fecha	Campo base	 	 	 	
+activity_exception_decoration	Decoración de la actividad de excepción	Vehículo	selección	Campo base	 	 	 	
+activity_exception_icon	Icono	Vehículo	caracter	Campo base	 	 	 	
+activity_ids	Actividades	Vehículo	one2many	Campo base	 	 	 	mail.activity
+activity_state	Estado de la actividad	Vehículo	selección	Campo base	 	 	 	
+activity_summary	Resumen de la siguiente actividad	Vehículo	caracter	Campo base	 	 	 	
+activity_type_icon	Icono del tipo de actividad	Vehículo	caracter	Campo base	 	 	 	
+activity_type_id	Siguiente tipo de actividad	Vehículo	many2one	Campo base	 	 	 	mail.activity.type
+activity_user_id	Usuario responsable	Vehículo	many2one	Campo base	 	 	 	res.users
+avatar_1024	Avatar 1024	Vehículo	binario	Campo base	 	 	 	
+avatar_128	Avatar 128	Vehículo	binario	Campo base	 	 	 	
+avatar_1920	Avatar	Vehículo	binario	Campo base	 	 	 	
+avatar_256	Avatar 256	Vehículo	binario	Campo base	 	 	 	
+avatar_512	Avatar 512	Vehículo	binario	Campo base	 	 	 	
+bill_count	Número de facturas	Vehículo	entero	Campo base	 	 	 	
+brand_id	Marca	Vehículo	many2one	Campo base	 	 	 	fleet.vehicle.model.brand
+car_value	Valor de catálogo (IVA incluido)	Vehículo	número flotante	Campo base	 	 	 	
+category_id	Categoría	Vehículo	many2one	Campo base	 	 	 	fleet.vehicle.model.category
+co2	Emisiones de CO₂	Vehículo	número flotante	Campo base	 	 	 	
+co2_emission_unit	Unidad de emisión de CO₂	Vehículo	selección	Campo base	 	 	 	
+co2_standard	Estándar de emisión	Vehículo	caracter	Campo base	 	 	 	
+color	Color	Vehículo	caracter	Campo base	 	 	 	
+company_id	Empresa	Vehículo	many2one	Campo base	 	 	 	res.company
+contract_count	Número de contratos	Vehículo	entero	Campo base	 	 	 	
+contract_date_start	Fecha del primer contrato	Vehículo	fecha	Campo base	 	 	 	
+contract_renewal_due_soon	Tiene contratos por renovar	Vehículo	booleano	Campo base	 	 	 	
+contract_renewal_overdue	Tiene contratos vencidos	Vehículo	booleano	Campo base	 	 	 	
+contract_state	Estado del último contrato	Vehículo	selección	Campo base	 	 	 	
+country_code	Código del país	Vehículo	caracter	Campo base	 	 	 	
+country_id	País	Vehículo	many2one	Campo base	 	 	 	res.country
+create_date	Creado el	Vehículo	fecha y hora	Campo base	 	 	 	
+create_uid	Creado por	Vehículo	many2one	Campo base	 	 	 	res.users
+currency_id	Moneda	Vehículo	many2one	Campo base	 	 	 	res.currency
+description	Descripción del vehículo	Vehículo	HTML	Campo base	 	 	 	
+display_name	Nombre en pantalla	Vehículo	caracter	Campo base	 	 	 	
+doors	Número de puertas	Vehículo	entero	Campo base	 	 	 	
+driver_employee_id	Conductor (empleado)	Vehículo	many2one	Campo base	 	 	 	hr.employee
+driver_employee_name	Nombre del empleado	Vehículo	caracter	Campo base	 	 	 	
+driver_id	Conductor	Vehículo	many2one	Campo base	 	 	 	res.partner
+electric_assistance	Asistencia eléctrica	Vehículo	booleano	Campo base	 	 	 	
+frame_size	Tamaño del cuadro	Vehículo	número flotante	Campo base	 	 	 	
+frame_type	Tipo de cuadro de bicicleta	Vehículo	selección	Campo base	 	 	 	
+fuel_type	Tipo de combustible	Vehículo	selección	Campo base	 	 	 	
+future_driver_employee_id	Próximo conductor (empleado)	Vehículo	many2one	Campo base	 	 	 	hr.employee
+future_driver_id	Próximo conductor	Vehículo	many2one	Campo base	 	 	 	res.partner
+has_message	Tiene un mensaje	Vehículo	booleano	Campo base	 	 	 	
+history_count	Número de conductores en el historial	Vehículo	entero	Campo base	 	 	 	
+horsepower	Caballos de fuerza	Vehículo	número flotante	Campo base	 	 	 	
+horsepower_tax	Impuestos sobre caballos de fuerza	Vehículo	número flotante	Campo base	 	 	 	
+id	ID	Vehículo	entero	Campo base	 	 	 	
+image_1024	Imagen 1024	Vehículo	binario	Campo base	 	 	 	
+image_128	Imagen 128	Vehículo	binario	Campo base	 	 	 	
+image_1920	Imagen	Vehículo	binario	Campo base	 	 	 	
+image_256	Imagen 256	Vehículo	binario	Campo base	 	 	 	
+image_512	Imagen 512	Vehículo	binario	Campo base	 	 	 	
+license_plate	Matrícula	Vehículo	caracter	Campo base	 	 	 	
+location	Ubicación	Vehículo	caracter	Campo base	 	 	 	
+log_contracts	Contratos	Vehículo	one2many	Campo base	 	 	 	fleet.vehicle.log.contract
+log_drivers	Registros de asignación	Vehículo	one2many	Campo base	 	 	 	fleet.vehicle.assignation.log
+log_services	Registros de los servicios	Vehículo	one2many	Campo base	 	 	 	fleet.vehicle.log.services
+manager_id	Gerente de la flotilla	Vehículo	many2one	Campo base	 	 	 	res.users
+message_attachment_count	Número de archivos adjuntos	Vehículo	entero	Campo base	 	 	 	
+message_follower_ids	Seguidores	Vehículo	one2many	Campo base	 	 	 	mail.followers
+message_has_error	Error al enviar el mensaje	Vehículo	booleano	Campo base	 	 	 	
+message_has_error_counter	Número de errores	Vehículo	entero	Campo base	 	 	 	
+message_has_sms_error	SMS Delivery error	Vehículo	booleano	Campo base	 	 	 	
+message_ids	Mensajes	Vehículo	one2many	Campo base	 	 	 	mail.message
+message_is_follower	Es un seguidor	Vehículo	booleano	Campo base	 	 	 	
+message_needaction	Se requiere una acción	Vehículo	booleano	Campo base	 	 	 	
+message_needaction_counter	Número de acciones	Vehículo	entero	Campo base	 	 	 	
+message_partner_ids	Seguidores (contactos)	Vehículo	many2many	Campo base	 	 	 	res.partner
+mobility_card	Tarjeta de movilidad	Vehículo	caracter	Campo base	 	 	 	
+model_id	Modelo	Vehículo	many2one	Campo base	 	 	 	fleet.vehicle.model
+model_year	Año del modelo	Vehículo	selección	Campo base	 	 	 	
+my_activity_date_deadline	Fecha límite de mi actividad	Vehículo	fecha	Campo base	 	 	 	
+name	Nombre	Vehículo	caracter	Campo base	 	 	 	

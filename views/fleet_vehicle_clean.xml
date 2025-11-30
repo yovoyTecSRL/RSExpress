@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Vista limpia de vehículos - Sin campos de pedidos -->
+    <record id="orbix_fleet_clean_view" model="ir.ui.view">
+        <field name="name">orbix.fleet.clean.view</field>
+        <field name="model">fleet.vehicle</field>
+        <field name="inherit_id" ref="fleet.fleet_vehicle_view_form"/>
+        <field name="arch" type="xml">
+            <!-- No se agregan campos personalizados, se mantiene vista estándar -->
+        </field>
+    </record>
+</odoo>

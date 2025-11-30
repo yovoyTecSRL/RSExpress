@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Menú OpsCenter dentro de RSExpress -->
+    <menuitem id="menu_rsexpress_opscenter"
+              name="OpsCenter"
+              parent="menu_rsexpress_root"
+              action="action_rsexpress_opscenter"
+              sequence="5"/>
+</odoo>

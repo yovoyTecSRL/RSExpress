@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="orbix_fleet_vehicle_list_inherit" model="ir.ui.view">
+        <field name="name">orbix.fleet.vehicle.list.inherit</field>
+        <field name="model">fleet.vehicle</field>
+        <field name="inherit_id" ref="fleet.fleet_vehicle_view_tree"/>
+
+        <field name="arch" type="xml">
+            <!-- Agregar columnas RSExpress después de driver_id -->
+            <xpath expr="//field[@name='driver_id']" position="after">
+                <field name="x_internal_code"/>
+                <field name="x_driver_id"/>
+                <field name="x_operational_status" 
+                       decoration-success="x_operational_status == 'available'"
+                       decoration-info="x_operational_status in ['assigned', 'on_route']"
+                       decoration-warning="x_operational_status in ['picked', 'delivering']"
+                       decoration-primary="x_operational_status == 'delivered_ok'"
+                       decoration-muted="x_operational_status in ['delivered_issue', 'failed', 'cancelled']"
+                       widget="badge"/>
+                <field name="x_orders_completed"/>
+                <field name="x_success_rate" widget="percentage"/>
+                <field name="x_distance_today" optional="hide"/>
+                <field name="x_last_gps_ping" optional="hide"/>
+            </xpath>
+        </field>
+    </record>
+</odoo>
