@@ -8,6 +8,11 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <!-- Traccar Integration -->
+    <script src="scripts/traccar/traccar-config.js?v=20251130-001"></script>
+    <script src="scripts/traccar/traccar.js?v=20251130-001"></script>
+    <!-- Odoo Integration V2 -->
+    <script src="scripts/odoo/odoo-integration-v2.js?v=20251130-001"></script>
 </head>
 <body>
     <!-- Header -->
@@ -23,6 +28,8 @@
             <nav class="nav">
                 <a href="#" class="nav-link active" data-page="home">Inicio</a>
                 <a href="#" class="nav-link" data-page="trips">Mis Viajes</a>
+                <a href="#" class="nav-link" data-page="fleet">Flota</a>
+                <a href="#" class="nav-link" data-page="orders">Pedidos CRM</a>
                 <a href="#" class="nav-link" data-page="driver">Ser Conductor</a>
                 <a href="#" class="nav-link" data-page="driver-panel">Panel Conductor</a>
                 <a href="#" class="nav-link" data-page="history">Historial</a>
@@ -30,18 +37,42 @@
                 <a href="#" class="nav-link" data-page="profile">Perfil</a>
             </nav>
             <div class="user-menu">
+                <!-- Connection Status Bulb -->
+                <div class="connection-bulb connecting" id="connectionBulb" title="Estado de conexión">
+                    <div class="bulb-indicator"></div>
+                    <span class="bulb-tooltip" id="bulbTooltip">🟡 Conectando...</span>
+                </div>
+                
+                <!-- Menu Dashboard Responsive (Grip) -->
+                <button class="btn-menu-dashboard" id="btnMenuDashboard" title="Menú">
+                    <i class="fas fa-grip-vertical"></i>
+                </button>
+                
                 <button class="btn-theme-toggle" id="themeToggle" title="Cambiar tema">
                     <i class="fas fa-sun"></i>
                 </button>
                 <button class="btn-login" id="loginBtn">Iniciar Sesión</button>
                 <div class="user-profile" id="userProfile" style="display: none;">
-                    <img src="assets/default-avatar.png" alt="Usuario" class="avatar" id="userAvatar" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Ccircle cx=%2250%22 cy=%2250%22 r=%2250%22 fill=%22%23e74c3c%22/%3E%3Ctext x=%2250%22 y=%2260%22 font-size=%2240%22 text-anchor=%22middle%22 fill=%22white%22%3EU%3C/text%3E%3C/svg%3E'>
+                    <img src="assets/default-avatar.svg" alt="Usuario" class="avatar" id="userAvatar">
                     <span id="userName">Usuario</span>
                     <button class="btn-logout" id="logoutBtn">Salir</button>
                 </div>
             </div>
         </div>
     </header>
+
+    <!-- Fleet Dashboard CTA Banner -->
+    <div class="fleet-cta-banner">
+        <div class="fleet-cta-content">
+            <div class="fleet-cta-text">
+                <h3><i class="fas fa-map"></i> Panel de Flota en Vivo</h3>
+                <p>Ve en tiempo real la ubicación de todos tus conductores y entregas en el mapa</p>
+            </div>
+            <a href="http://localhost:5555/test-fleet-dashboard.html" target="_blank" class="fleet-cta-btn">
+                <i class="fas fa-external-link-alt"></i> Abrir Dashboard
+            </a>
+        </div>
+    </div>
 
     <!-- Main Content -->
     <main class="main-content">
@@ -202,6 +233,138 @@
 
                 <div id="tripsList" class="trips-list">
                     <!-- Trips will be dynamically loaded here -->
+                </div>
+            </div>
+        </section>
+
+        <!-- Fleet Page -->
+        <section id="fleetPage" class="page">
+            <div class="container">
+                <div class="page-header">
+                    <h1><i class="fas fa-truck"></i> Mi Flota</h1>
+                    <div class="fleet-stats">
+                        <div class="stat-item">
+                            <span class="stat-label">Total de Unidades</span>
+                            <span class="stat-value" data-stat="total">0</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">En Línea</span>
+                            <span class="stat-value" data-stat="online">0</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Entregas Activas</span>
+                            <span class="stat-value" data-stat="deliveries">0</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Fleet Layout Container -->
+                <div class="fleet-layout-container">
+                    <!-- Sidebar con lista de conductores y entregas -->
+                    <div class="fleet-sidebar">
+                        <!-- Pestañas para cambiar entre conductores y entregas -->
+                        <div class="fleet-sidebar-tabs" style="
+                            display: flex;
+                            gap: 10px;
+                            margin-bottom: 15px;
+                            border-bottom: 2px solid #e0e0e0;
+                        ">
+                            <button class="fleet-tab-btn active" data-tab="drivers" onclick="switchFleetTab('drivers')" style="
+                                flex: 1;
+                                padding: 10px;
+                                border: none;
+                                background: none;
+                                cursor: pointer;
+                                font-weight: bold;
+                                color: #ff6b35;
+                                border-bottom: 3px solid #ff6b35;
+                                transition: all 0.3s;
+                            ">
+                                🚗 Conductores
+                            </button>
+                            <button class="fleet-tab-btn" data-tab="deliveries" onclick="switchFleetTab('deliveries')" style="
+                                flex: 1;
+                                padding: 10px;
+                                border: none;
+                                background: none;
+                                cursor: pointer;
+                                font-weight: bold;
+                                color: #999;
+                                transition: all 0.3s;
+                            ">
+                                📦 Entregas
+                            </button>
+                        </div>
+                        
+                        <!-- Lista de conductores -->
+                        <h3 id="driversTitle" style="margin: 0 0 10px 0;"><i class="fas fa-list"></i> Conductores</h3>
+                        <div class="drivers-list" id="fleetDriversList">
+                            <div class="loading-spinner">
+                                <i class="fas fa-spinner fa-spin"></i> Cargando...
+                            </div>
+                        </div>
+                        
+                        <!-- Lista de entregas (oculta por defecto) -->
+                        <h3 id="deliveriesTitle" style="margin: 0 0 10px 0; display: none;"><i class="fas fa-box"></i> Entregas</h3>
+                        <div class="deliveries-list" id="fleetDeliveriesList" style="display: none;">
+                            <div class="loading-spinner">
+                                <i class="fas fa-spinner fa-spin"></i> Cargando...
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Mapa principal -->
+                    <div class="fleet-map-wrapper">
+                        <div id="fleetMapContainer" style="width: 100%; height: 100%;"></div>
+                        
+                        <!-- Controles del mapa -->
+                        <div class="fleet-map-controls">
+                            <button class="fleet-map-btn" onclick="fleetMapCenterHQ()" title="Centro de Operaciones">
+                                <i class="fas fa-rocket"></i>
+                            </button>
+                            <button class="fleet-map-btn" onclick="fleetMapZoomIn()" title="Zoom +">
+                                <i class="fas fa-plus"></i>
+                            </button>
+                            <button class="fleet-map-btn" onclick="fleetMapZoomOut()" title="Zoom -">
+                                <i class="fas fa-minus"></i>
+                            </button>
+                            <button class="fleet-map-btn" onclick="fleetMapCenter()" title="Centrar">
+                                <i class="fas fa-crosshairs"></i>
+                            </button>
+                            <button class="fleet-map-btn" onclick="fleetMapRefresh()" title="Refrescar">
+                                <i class="fas fa-sync-alt"></i>
+                            </button>
+                        </div>
+
+                        <!-- Leyenda -->
+                        <div class="fleet-map-legend">
+                            <div class="legend-item">
+                                <i class="fas fa-rocket" style="color: #ff6b35; font-size: 14px;"></i>
+                                <span>Centro HQ</span>
+                            </div>
+                            <div class="legend-item">
+                                <div class="legend-dot" style="background: #27ae60;"></div>
+                                <span>Activo</span>
+                            </div>
+                            <div class="legend-item">
+                                <div class="legend-dot" style="background: #f39c12;"></div>
+                                <span>En Entrega</span>
+                            </div>
+                            <div class="legend-item">
+                                <div class="legend-dot" style="background: #e74c3c;"></div>
+                                <span>Inactivo</span>
+                            </div>
+                            <div class="legend-item">
+                                <div class="legend-dot" style="background: #3498db;"></div>
+                                <span>📦 Paquete</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Grid de unidades (fallback) -->
+                <div id="fleet-list" class="fleet-grid" style="display: none;">
+                    <!-- Fleet units will be dynamically loaded here -->
                 </div>
             </div>
         </section>
@@ -619,6 +782,203 @@
             </div>
         </section>
 
+        <!-- Admin Dashboard Page -->
+        <section id="adminPage" class="page">
+            <div class="container">
+                <div class="page-header">
+                    <h1><i class="fas fa-shield-alt"></i> Panel Administrativo</h1>
+                    <div class="admin-period">
+                        <button class="period-btn active" data-period="today">Hoy</button>
+                        <button class="period-btn" data-period="week">Esta Semana</button>
+                        <button class="period-btn" data-period="month">Este Mes</button>
+                    </div>
+                </div>
+
+                <!-- Admin Summary Cards -->
+                <div class="admin-summary">
+                    <div class="summary-card">
+                        <div class="summary-icon"><i class="fas fa-box"></i></div>
+                        <div class="summary-info">
+                            <div class="summary-label">Entregas Totales</div>
+                            <div class="summary-value" id="adminTotalDeliveries">0</div>
+                        </div>
+                    </div>
+                    <div class="summary-card">
+                        <div class="summary-icon"><i class="fas fa-users"></i></div>
+                        <div class="summary-info">
+                            <div class="summary-label">Clientes Activos</div>
+                            <div class="summary-value" id="adminActiveClients">0</div>
+                        </div>
+                    </div>
+                    <div class="summary-card">
+                        <div class="summary-icon"><i class="fas fa-motorcycle"></i></div>
+                        <div class="summary-info">
+                            <div class="summary-label">Conductores En Línea</div>
+                            <div class="summary-value" id="adminOnlineDrivers">0</div>
+                        </div>
+                    </div>
+                    <div class="summary-card">
+                        <div class="summary-icon"><i class="fas fa-dollar-sign"></i></div>
+                        <div class="summary-info">
+                            <div class="summary-label">Ingresos Hoy</div>
+                            <div class="summary-value" id="adminTodayRevenue">$0.00</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Admin Tabs -->
+                <div class="admin-tabs">
+                    <button class="admin-tab-btn active" data-tab="deliveries">
+                        <i class="fas fa-truck"></i> Entregas
+                    </button>
+                    <button class="admin-tab-btn" data-tab="clients">
+                        <i class="fas fa-users"></i> Clientes
+                    </button>
+                    <button class="admin-tab-btn" data-tab="drivers">
+                        <i class="fas fa-car"></i> Conductores
+                    </button>
+                    <button class="admin-tab-btn" data-tab="units">
+                        <i class="fas fa-motorcycle"></i> Unidades
+                    </button>
+                    <button class="admin-tab-btn" data-tab="fleet">
+                        <i class="fas fa-map"></i> Panel Flota
+                    </button>
+                    <button class="admin-tab-btn" data-tab="odoo-users" id="odooUsersTabBtn">
+                        <i class="fas fa-database"></i> Usuarios Odoo
+                    </button>
+                </div>
+
+                <!-- Deliveries Tab -->
+                <div class="admin-tab-content active" id="tab-deliveries">
+                    <div class="admin-list">
+                        <div class="list-header">
+                            <span>ID</span>
+                            <span>Cliente</span>
+                            <span>Conductor</span>
+                            <span>Estado</span>
+                            <span>Fecha</span>
+                            <span>Acciones</span>
+                        </div>
+                        <div id="deliveriesList" class="list-items">
+                            <!-- Populated by JavaScript -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Clients Tab -->
+                <div class="admin-tab-content" id="tab-clients">
+                    <div class="admin-list">
+                        <div class="list-header">
+                            <span>Nombre</span>
+                            <span>Email</span>
+                            <span>Teléfono</span>
+                            <span>Entregas</span>
+                            <span>Estado</span>
+                            <span>Acciones</span>
+                        </div>
+                        <div id="clientsList" class="list-items">
+                            <!-- Populated by JavaScript -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Drivers Tab -->
+                <div class="admin-tab-content" id="tab-drivers">
+                    <div class="admin-list">
+                        <div class="list-header">
+                            <span>Nombre</span>
+                            <span>Vehículo</span>
+                            <span>Estado</span>
+                            <span>Entregas</span>
+                            <span>Calificación</span>
+                            <span>Acciones</span>
+                        </div>
+                        <div id="driversList" class="list-items">
+                            <!-- Populated by JavaScript -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Units Tab -->
+                <div class="admin-tab-content" id="tab-units">
+                    <div class="admin-list">
+                        <div class="list-header">
+                            <span>ID Unidad</span>
+                            <span>Modelo</span>
+                            <span>Conductor</span>
+                            <span>Km</span>
+                            <span>Combustible</span>
+                            <span>Mantenimiento</span>
+                            <span>Acciones</span>
+                        </div>
+                        <div id="unitsList" class="list-items">
+                            <!-- Populated by JavaScript -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Fleet Panel Tab -->
+                <div class="admin-tab-content" id="tab-fleet">
+                    <div id="fleetDashboardContainer"></div>
+                </div>
+
+                <!-- Odoo Users Tab -->
+                <div class="admin-tab-content" id="tab-odoo-users">
+                    <div class="odoo-users-container">
+                        <div class="odoo-users-header">
+                            <div class="odoo-status">
+                                <div class="status-item">
+                                    <span class="status-label">Estado Conexión:</span>
+                                    <span class="status-value" id="odooConnectionStatus">🔴 Desconectado</span>
+                                </div>
+                                <div class="status-item">
+                                    <span class="status-label">Usuarios Sincronizados:</span>
+                                    <span class="status-value" id="odooUserCount">0</span>
+                                </div>
+                            </div>
+                            <button class="btn-primary" id="btnSyncOdooUsersAdmin" style="padding: 0.5rem 1.5rem;">
+                                <i class="fas fa-sync-alt"></i> Sincronizar Ahora
+                            </button>
+                        </div>
+                        <div id="odooUsersContainerAdmin" class="odoo-users-list">
+                            <p style="text-align: center; color: var(--gray-light); padding: 2rem;">
+                                Haz clic en "Sincronizar" para obtener usuarios de Odoo
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Odoo Users Page -->
+        <section id="odooUsersPage" class="page">
+            <div class="container">
+                <div class="page-header">
+                    <h1><i class="fas fa-database"></i> Usuarios Odoo 19</h1>
+                    <button class="btn-primary" id="btnSyncOdooUsersPage" style="padding: 0.5rem 1.5rem;">
+                        <i class="fas fa-sync-alt"></i> Sincronizar
+                    </button>
+                </div>
+
+                <div class="odoo-status">
+                    <div class="status-item">
+                        <span class="status-label">Estado Conexión:</span>
+                        <span class="status-value" id="odooConnectionStatusPage">🔴 Desconectado</span>
+                    </div>
+                    <div class="status-item">
+                        <span class="status-label">Usuarios Sincronizados:</span>
+                        <span class="status-value" id="odooUserCountPage">0</span>
+                    </div>
+                </div>
+
+                <div id="odooUsersContainerPage" class="odoo-users-list">
+                    <p style="text-align: center; color: var(--gray-light); padding: 2rem;">
+                        Haz clic en "Sincronizar" para obtener usuarios de Odoo
+                    </p>
+                </div>
+            </div>
+        </section>
+
         <!-- Profile Page -->
         <section id="profilePage" class="page">
             <div class="container">
@@ -892,9 +1252,124 @@
         </div>
     </div>
 
+    <!-- Menu Dashboard Modal -->
+    <div id="menuDashboard" class="modal-dashboard">
+        <div class="dashboard-overlay"></div>
+        <div class="dashboard-menu">
+            <div class="dashboard-header">
+                <h2>Menú Principal</h2>
+                <button class="close-dashboard" id="closeMenuDashboard">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="dashboard-grid">
+                <!-- Menu Items -->
+                <a href="#" class="dashboard-item" data-page="home">
+                    <div class="item-icon"><i class="fas fa-home"></i></div>
+                    <div class="item-label">Inicio</div>
+                </a>
+                <a href="#" class="dashboard-item" data-page="trips">
+                    <div class="item-icon"><i class="fas fa-map-location-dot"></i></div>
+                    <div class="item-label">Mis Viajes</div>
+                </a>
+                <a href="#" class="dashboard-item" data-page="fleet">
+                    <div class="item-icon"><i class="fas fa-truck"></i></div>
+                    <div class="item-label">Flota</div>
+                </a>
+                <a href="#" class="dashboard-item" data-page="driver">
+                    <div class="item-icon"><i class="fas fa-steering-wheel"></i></div>
+                    <div class="item-label">Ser Conductor</div>
+                </a>
+                <a href="#" class="dashboard-item" data-page="driver-panel">
+                    <div class="item-icon"><i class="fas fa-dashboard"></i></div>
+                    <div class="item-label">Panel Conductor</div>
+                </a>
+                <a href="#" class="dashboard-item" data-page="history">
+                    <div class="item-icon"><i class="fas fa-history"></i></div>
+                    <div class="item-label">Historial</div>
+                </a>
+                <a href="#" class="dashboard-item" data-page="stats">
+                    <div class="item-icon"><i class="fas fa-chart-bar"></i></div>
+                    <div class="item-label">Estadísticas</div>
+                </a>
+                <a href="#" class="dashboard-item" data-page="admin" style="display: none;">
+                    <div class="item-icon"><i class="fas fa-shield-alt"></i></div>
+                    <div class="item-label">Panel Admin</div>
+                </a>
+                <a href="#" class="dashboard-item" data-page="odooUsers" style="display: none;">
+                    <div class="item-icon"><i class="fas fa-database"></i></div>
+                    <div class="item-label">Usuarios Odoo</div>
+                </a>
+                <a href="#" class="dashboard-item" data-page="profile">
+                    <div class="item-icon"><i class="fas fa-user"></i></div>
+                    <div class="item-label">Perfil</div>
+                </a>
+                <button class="dashboard-item" id="dashboardLogout" style="border: none; cursor: pointer;">
+                    <div class="item-icon"><i class="fas fa-sign-out-alt"></i></div>
+                    <div class="item-label">Salir</div>
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- Notification Toast -->
     <div id="toast" class="toast"></div>
 
-    <script src="app.js"></script>
+    <script src="scripts/core/app.js?v=20251130-001"></script>
+    <script src="scripts/utils/shipments-examples.js?v=20251130-001"></script>
+    <script src="scripts/utils/debug-console.js?v=20251130-001"></script>
+    <script src="scripts/odoo/odoo-integration.js?v=20251130-001"></script>
+    <script src="test/odoo-test-suite.js?v=20251130-001"></script>
+    <script src="test/test-odoo-proxy.js?v=20251130-001"></script>
+    <script src="scripts/fleet/route-optimizer.js?v=20251130-001"></script>
+    <script src="test/test-route-optimizer.js?v=20251130-001"></script>
+    <script src="scripts/fleet/route-map-visualizer.js?v=20251130-001"></script>
+    <script src="test/test-complete-routes.js?v=20251130-001"></script>
+    <script src="scripts/fleet/driver-fleet-panel.js?v=20251130-001"></script>
+    <script src="test/test-driver-fleet.js?v=20251130-001"></script>
+    <script src="scripts/fleet/fleet-dashboard.js?v=20251130-001"></script>
+    <script src="scripts/fleet/fleet-realtime-watcher.js?v=20251130-001"></script>
+    <script src="scripts/fleet/live-fleet-sync.js?v=20251130-001"></script>
+    <script src="scripts/fleet/fleet-view-reflection.js?v=20251130-001"></script>
+    <script src="scripts/fleet/fleet-integration.js?v=20251130-005"></script>
+    <script src="scripts/fleet/fleet-map-controller.js?v=20251130-005"></script>
+    <script src="scripts/fleet/driver-positioning-system.js?v=20251201-001"></script>
+    <script src="test-complete-routes.js?v=20251130-005"></script>
+
+    <script>
+        // Inicializar sistema de posicionamiento de drivers
+        document.addEventListener('DOMContentLoaded', () => {
+            setTimeout(() => {
+                // Verificar que el mapa de Leaflet esté disponible
+                if (typeof L !== 'undefined') {
+                    // Crear o usar el mapa existente
+                    let fleetMap = document.getElementById('fleet-map') ? 
+                        L.map('fleet-map').setView([19.4326, -99.1332], 12) : 
+                        window.fleetMap;
+                    
+                    if (!fleetMap && document.getElementById('map')) {
+                        fleetMap = document.getElementById('map')._leaflet_map || 
+                                   L.map('map').setView([19.4326, -99.1332], 12);
+                    }
+
+                    if (fleetMap) {
+                        // Agregar OpenStreetMap si no está agregado
+                        if (!fleetMap._tileLayer) {
+                            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                                attribution: '© OpenStreetMap contributors',
+                                maxZoom: 19
+                            }).addTo(fleetMap);
+                        }
+
+                        // Inicializar sistema de posicionamiento
+                        window.driverPositioningSystem = new DriverPositioningSystem(fleetMap);
+                        window.driverPositioningSystem.printStatistics();
+                        
+                        console.log('✅ Sistema de Posicionamiento de Drivers Inicializado');
+                    }
+                }
+            }, 1000);
+        });
+    </script>
 </body>
 </html>

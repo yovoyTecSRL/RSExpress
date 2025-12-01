@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test - Cola de Entregas por Conductor</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            background: #f8f9fa;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        .test-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        
+        .test-header {
+            background: linear-gradient(135deg, #ff6b35 0%, #e74c3c 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        
+        .test-header h1 {
+            margin: 0;
+            font-size: 28px;
+        }
+        
+        .test-content {
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            gap: 20px;
+            padding: 30px;
+        }
+        
+        .test-section {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 20px;
+        }
+        
+        .test-section h3 {
+            margin-top: 0;
+            color: #ff6b35;
+            border-bottom: 3px solid #ff6b35;
+            padding-bottom: 10px;
+        }
+        
+        .button-group {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        
+        .btn-test {
+            background: #ff6b35;
+            color: white;
+            border: none;
+            padding: 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-test:hover {
+            background: #e74c3c;
+            transform: translateX(4px);
+        }
+        
+        .btn-test.active {
+            background: #27ae60;
+        }
+        
+        .queue-panel {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .output-panel {
+            background: #1e1e1e;
+            color: #00ff00;
+            font-family: 'Courier New', monospace;
+            padding: 15px;
+            border-radius: 6px;
+            font-size: 12px;
+            max-height: 400px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+        
+        .info-box {
+            background: #e8f4f8;
+            border-left: 4px solid #3498db;
+            padding: 15px;
+            border-radius: 4px;
+            margin-bottom: 15px;
+        }
+        
+        .stat-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+        
+        .stat-card {
+            background: white;
+            padding: 15px;
+            border-radius: 6px;
+            border: 2px solid #e0e0e0;
+            text-align: center;
+        }
+        
+        .stat-card .label {
+            font-size: 12px;
+            color: #666;
+            font-weight: bold;
+        }
+        
+        .stat-card .value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #ff6b35;
+            margin-top: 8px;
+        }
+        
+        .delivery-item {
+            background: white;
+            border-left: 4px solid #ff6b35;
+            padding: 12px;
+            border-radius: 4px;
+            margin-bottom: 10px;
+        }
+        
+        .delivery-item .client {
+            font-weight: bold;
+            color: #333;
+        }
+        
+        .delivery-item .address {
+            font-size: 12px;
+            color: #666;
+            margin-top: 4px;
+        }
+        
+        .delivery-item .priority {
+            display: inline-block;
+            margin-top: 6px;
+            padding: 3px 8px;
+            border-radius: 3px;
+            font-size: 11px;
+            font-weight: bold;
+            color: white;
+        }
+        
+        .priority.urgente {
+            background: #ff6b6b;
+        }
+        
+        .priority.alta {
+            background: #ffd93d;
+            color: #333;
+        }
+        
+        .priority.normal {
+            background: #6bcf7f;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <div class="test-header">
+            <h1>🚗 Sistema de Cola de Entregas por Conductor</h1>
+            <p>Visualización y gestión de entregas asignadas a cada conductor</p>
+        </div>
+        
+        <div class="test-content">
+            <!-- Selector de Conductores -->
+            <div class="test-section">
+                <h3><i class="fas fa-users"></i> Conductores</h3>
+                <div class="button-group" id="driverButtons">
+                    <!-- Se llenará dinámicamente -->
+                </div>
+            </div>
+            
+            <!-- Panel de Detalles -->
+            <div class="test-section">
+                <h3><i class="fas fa-clipboard-list"></i> Cola de Entregas</h3>
+                <div id="queuePanel">
+                    <div class="info-box">
+                        <p><i class="fas fa-info-circle"></i> Selecciona un conductor para ver su cola de entregas</p>
+                    </div>
+                </div>
+                
+                <h3 style="margin-top: 30px;"><i class="fas fa-terminal"></i> Consola de Debug</h3>
+                <div class="output-panel" id="outputPanel">
+                    Selecciona un conductor para ver la salida de consola...
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="../scripts/fleet/driver-fleet-panel.js?v=20251130-005"></script>
+    <script src="../scripts/fleet/fleet-integration.js?v=20251130-005"></script>
+    
+    <script>
+        /**
+         * Inicializar sistema de prueba
+         */
+        function initTestUI() {
+            const snapshot = window.driverFleetPanel.getSnapshot();
+            const driverButtons = document.getElementById('driverButtons');
+            
+            // Crear botones para cada conductor
+            snapshot.drivers.forEach((driver, index) => {
+                const btn = document.createElement('button');
+                btn.className = 'btn-test';
+                btn.innerHTML = `
+                    <i class="fas fa-user-tie"></i> ${driver.name}
+                `;
+                btn.onclick = () => showDriverQueue(driver.id, btn);
+                driverButtons.appendChild(btn);
+            });
+        }
+        
+        /**
+         * Mostrar cola de un conductor
+         */
+        function showDriverQueue(driverId, buttonElement) {
+            // Actualizar estado del botón
+            document.querySelectorAll('.btn-test').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            buttonElement.classList.add('active');
+            
+            // Obtener información del conductor
+            const queueInfo = window.driverFleetPanel.getDriverQueueInfo(driverId);
+            if (!queueInfo) {
+                document.getElementById('queuePanel').innerHTML = '<p style="color: #e74c3c;">Error: No se encontró la información del conductor</p>';
+                return;
+            }
+            
+            const { driver, queue, pendingDeliveries, completedDeliveries, averagePriority } = queueInfo;
+            
+            // Construir HTML del panel
+            let html = `
+                <div class="queue-panel">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                        <h2 style="margin: 0; color: #333;">🏍️ ${driver.name}</h2>
+                        <span style="background: #e8f4f8; padding: 8px 12px; border-radius: 20px; font-weight: bold; color: #3498db;">
+                            Estado: ${driver.status.toUpperCase()}
+                        </span>
+                    </div>
+                    
+                    <div class="stat-grid">
+                        <div class="stat-card">
+                            <div class="label">Entregas Completadas</div>
+                            <div class="value">${completedDeliveries}</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="label">Entregas Pendientes</div>
+                            <div class="value" style="color: #ff6b35;">${pendingDeliveries}</div>
+                        </div>
+                    </div>
+                    
+                    <div class="info-box">
+                        <strong>Prioridad Promedio:</strong> 
+                        <span style="
+                            font-weight: bold;
+                            color: ${averagePriority === 'Urgente' ? '#ff6b6b' : averagePriority === 'Alta' ? '#ffd93d' : '#6bcf7f'};
+                        ">
+                            ${averagePriority}
+                        </span>
+                    </div>
+                    
+                    <h3 style="margin: 20px 0 15px 0; color: #333;">📦 Cola de Entregas (${pendingDeliveries}/${queue.length})</h3>
+            `;
+            
+            // Agregar entregas
+            queue.forEach((delivery, index) => {
+                const priorityClass = delivery.priority;
+                const priorityText = delivery.priority === 'urgente' ? 'URGENTE' : 
+                                    delivery.priority === 'alta' ? 'ALTA' : 'NORMAL';
+                
+                html += `
+                    <div class="delivery-item">
+                        <div style="display: flex; justify-content: space-between;">
+                            <div>
+                                <div class="client">${index + 1}. ${delivery.clientName}</div>
+                                <div class="address">📍 ${delivery.address}</div>
+                            </div>
+                            <div class="priority ${priorityClass}">${priorityText}</div>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            html += `
+                    <div class="info-box" style="margin-top: 20px;">
+                        <small><strong>ID del Conductor:</strong> ${driver.id}</small><br>
+                        <small><strong>Distancia Total:</strong> ${driver.totalDistance.toFixed(1)} km</small><br>
+                        <small><strong>Eficiencia:</strong> ${driver.efficiency}%</small>
+                    </div>
+                </div>
+            `;
+            
+            document.getElementById('queuePanel').innerHTML = html;
+            
+            // Mostrar en consola
+            updateConsoleOutput(queueInfo);
+        }
+        
+        /**
+         * Actualizar panel de consola
+         */
+        function updateConsoleOutput(queueInfo) {
+            const { driver, queue, pendingDeliveries, completedDeliveries, averagePriority } = queueInfo;
+            let output = '';
+            
+            output += `╔══════════════════════════════════════╗\n`;
+            output += `║  INFORMACIÓN DEL CONDUCTOR\n`;
+            output += `╚══════════════════════════════════════╝\n\n`;
+            
+            output += `🚗 Conductor: ${driver.name}\n`;
+            output += `📍 Estado: ${driver.status}\n`;
+            output += `🎯 ID: ${driver.id}\n`;
+            output += `📊 Eficiencia: ${driver.efficiency}%\n`;
+            output += `🛣️  Distancia: ${driver.totalDistance.toFixed(1)} km\n\n`;
+            
+            output += `╔══════════════════════════════════════╗\n`;
+            output += `║  ESTADÍSTICAS DE COLA\n`;
+            output += `╚══════════════════════════════════════╝\n\n`;
+            
+            output += `📦 Entregas Pendientes: ${pendingDeliveries}\n`;
+            output += `✓ Entregas Completadas: ${completedDeliveries}\n`;
+            output += `📋 Total en Cola: ${queue.length}\n`;
+            output += `⚡ Prioridad Promedio: ${averagePriority}\n\n`;
+            
+            output += `╔══════════════════════════════════════╗\n`;
+            output += `║  ENTREGAS EN COLA\n`;
+            output += `╚══════════════════════════════════════╝\n\n`;
+            
+            queue.forEach((delivery, index) => {
+                const priorityEmoji = delivery.priority === 'urgente' ? '🔴' : 
+                                     delivery.priority === 'alta' ? '🟡' : '🟢';
+                const statusEmoji = delivery.status === 'completada' ? '✓' : 
+                                   delivery.status === 'en_progreso' ? '⏳' : '⏱️';
+                
+                output += `${index + 1}. ${delivery.clientName}\n`;
+                output += `   📍 ${delivery.address}\n`;
+                output += `   ${priorityEmoji} Prioridad: ${delivery.priority.toUpperCase()}\n`;
+                output += `   ${statusEmoji} Estado: ${delivery.status}\n`;
+                output += `   🆔 ID: ${delivery.id}\n\n`;
+            });
+            
+            document.getElementById('outputPanel').textContent = output;
+        }
+        
+        // Inicializar cuando carga la página
+        window.addEventListener('load', () => {
+            initTestUI();
+            console.log('✅ Sistema de prueba iniciado');
+            console.log('📊 Snapshot de flota:', window.driverFleetPanel.getSnapshot());
+        });
+    </script>
+</body>
+</html>

@@ -1,187 +1,169 @@
-# RS Express - Delivery & Errand Service Platform
+# 📦 RSExpress - Sistema de Gestión de Pedidos y Entregas
 
-Una aplicación web moderna inspirada en Uber y Pedidos Ya para servicios de delivery y mandados.
+**Integración Odoo CRM + Gestión de Flota + Entregas**
 
-## 🚀 Características
+## 🚀 Descripción Rápida
 
-### Para Usuarios
-- **Múltiples tipos de servicio**: 
-  - Envío de paquetes
-  - Mandados (compras, trámites)
-  - Transporte
-  
-- **Perfiles de usuario completos**:
-  - Gestión de información personal
-  - Métodos de pago guardados
-  - Direcciones favoritas
-  - Historial de viajes
+RSExpress es un sistema completo para:
+- 📋 Convertir leads de Odoo CRM en pedidos
+- 🚗 Gestionar flota de vehículos
+- 📍 Rastrear entregas en tiempo real
+- 👨‍✈️ Asignar conductores y rutas
+- 📊 Ver dashboards y estadísticas
 
-- **Seguimiento en tiempo real**:
-  - Código de rastreo único
-  - Estado del viaje
-  - Información del conductor
-  - Estimación de precios y tiempos
+## 🌐 Acceso Rápido
 
-### Para Conductores
-- **Registro sencillo**:
-  - Formulario de solicitud
-  - Verificación de requisitos
-  - Información de beneficios
+### Interfaces Web
+- **Gestor de Pedidos**: http://localhost:5555/orders-from-crm.html
+- **Dashboard de Flota**: http://localhost:5555/fleet-dashboard.html
+- **Cola de Entregas**: http://localhost:5555/test-delivery-queue.html
 
-- **Flexibilidad**:
-  - Horarios libres
-  - Buenos ingresos
-  - Soporte 24/7
+### Servicios
+- **OdooProxy**: http://localhost:9999/jsonrpc
+- **API HTTP**: http://localhost:5555
 
-## 📁 Estructura del Proyecto
+## 📚 Documentación
 
-```
-RSXpress/
-├── index.html          # Página principal con todas las secciones
-├── styles.css          # Estilos responsivos y modernos
-├── app.js             # Lógica de la aplicación
-├── assets/            # Imágenes y recursos
-│   └── rsexpress-logo.png (usar logo proporcionado)
-└── README.md          # Documentación
-```
+Toda la documentación está organizada en `/docs/`:
 
-## 🎨 Diseño
+### 🔧 Configuración
+- [JSON_RPC_CONFIG.md](docs/JSON_RPC_CONFIG.md) - Configuración JSON-RPC
+- [CONFIGURACION_FINAL.md](docs/CONFIGURACION_FINAL.md) - Checklist de configuración
+- [ODOO_INTEGRATION_COMPLETE.md](docs/ODOO_INTEGRATION_COMPLETE.md) - Integración con Odoo
 
-- **Colores principales**: Rojo (#e74c3c) y dorado (#f39c12) - basados en el logo RS Express
-- **Diseño responsivo**: Funciona en móviles, tablets y escritorio
-- **Interfaz moderna**: Inspirada en aplicaciones líderes del mercado
+### 📖 Guías
+- [FLEET_DASHBOARD_GUIA.md](docs/FLEET_DASHBOARD_GUIA.md) - Cómo usar el dashboard de flota
+- [GUIA_VERIFICACION_FLOTA.md](docs/GUIA_VERIFICACION_FLOTA.md) - Verificación de flota
+- [PROXY_INTEGRATION_SUMMARY.md](docs/PROXY_INTEGRATION_SUMMARY.md) - Resumen integración proxy
 
-## 🛠️ Tecnologías Utilizadas
+### 🎯 Características
+- [FLEET_DASHBOARD_README.md](docs/FLEET_DASHBOARD_README.md) - Features del dashboard
+- [QUEUE_SYSTEM_COMPLETE.md](docs/QUEUE_SYSTEM_COMPLETE.md) - Sistema de cola
+- [SINCRONIZACION_EN_VIVO.md](docs/SINCRONIZACION_EN_VIVO.md) - Sincronización en vivo
 
-- HTML5
-- CSS3 (Variables CSS, Grid, Flexbox)
-- JavaScript (ES6+)
-- Font Awesome para iconos
-- LocalStorage para persistencia de datos
+### 🚚 Rastreo
+- [TRACCAR_README.md](docs/TRACCAR_README.md) - Rastreo con Traccar
+- [TRACCAR_INTEGRATION.md](docs/TRACCAR_INTEGRATION.md) - Integración Traccar
+- [TRACCAR_IMPLEMENTATION.md](docs/TRACCAR_IMPLEMENTATION.md) - Implementación Traccar
 
-## 📱 Funcionalidades Principales
+### 📦 Entregas
+- [DELIVERIES_CLICKABLE.md](docs/DELIVERIES_CLICKABLE.md) - Entregas clickeables
+- [SHIPMENTS_ROUTES_FREIGHT.md](docs/SHIPMENTS_ROUTES_FREIGHT.md) - Rutas y envíos
 
-### 1. Sistema de Usuarios
-- Login y registro
-- Gestión de perfil
-- Configuración de notificaciones
-- Privacidad
+### 🔍 Verificación
+- [VERIFICACION_JSON_RPC.md](docs/VERIFICACION_JSON_RPC.md) - Tests de RPC
+- [QUICK_VERIFICATION.md](docs/QUICK_VERIFICATION.md) - Verificación rápida
 
-### 2. Solicitud de Servicios
-- Selección de origen y destino
-- Geolocalización
-- Cálculo automático de precios
-- Programación de fecha/hora
-- Descripción detallada del servicio
-
-### 3. Gestión de Viajes
-- Listado completo de viajes
-- Filtros por estado (activos, completados, cancelados)
-- Detalles completos del viaje
-- Información del conductor
-- Código de rastreo
-
-### 4. Sistema de Conductores
-- Requisitos claros
-- Beneficios destacados
-- Formulario de registro
-- Información de ingresos
-
-## 🚀 Cómo Usar
-
-1. **Abrir la aplicación**:
-   - Simplemente abre `index.html` en tu navegador
-
-2. **Crear cuenta o iniciar sesión**:
-   - Click en "Iniciar Sesión"
-   - Registrarse con datos básicos
-
-3. **Solicitar un servicio**:
-   - Seleccionar tipo de servicio
-   - Ingresar origen y destino
-   - Ver estimación de precio
-   - Confirmar solicitud
-
-4. **Seguir el viaje**:
-   - Ver en "Mis Viajes"
-   - Revisar detalles del conductor
-   - Marcar como completado
-
-## 💡 Mejoras Futuras
-
-- Integración con API de mapas real (Google Maps, Mapbox)
-- Sistema de pagos integrado (Stripe, PayPal)
-- Notificaciones push
-- Chat en tiempo real conductor-cliente
-- Sistema de calificaciones bidireccional
-- Backend con base de datos real
-- App móvil nativa (React Native, Flutter)
-- Panel de administración
-- Analytics y reportes
-
-## 🔧 Configuración para Desarrollo
-
-Para desarrollo futuro con backend:
+## 🛠️ Instalación Rápida
 
 ```bash
-# Estructura sugerida para backend
-backend/
-├── api/
-│   ├── users.js
-│   ├── trips.js
-│   ├── drivers.js
-│   └── payments.js
-├── models/
-│   ├── User.js
-│   ├── Trip.js
-│   └── Driver.js
-└── server.js
+# 1. Instalar dependencias
+npm install
+
+# 2. Iniciar servicios
+node start-services.js
+
+# 3. Abrir en navegador
+open http://localhost:5555/orders-from-crm.html
 ```
 
-## 📝 Notas de Implementación
+## 📋 Requisitos
 
-- Los datos actualmente se guardan en LocalStorage
-- La geolocalización usa la API del navegador
-- Los precios son calculados de forma simulada
-- La asignación de conductores es automática (demo)
+- Node.js 14+
+- Odoo 19 (rsexpress.online)
+- Navegador moderno (Chrome, Firefox, Safari)
+- Puerto 5555 disponible (HTTP)
+- Puerto 9999 disponible (OdooProxy)
 
-## 🎯 Próximos Pasos para Producción
+## 🔑 Credenciales
 
-1. **Backend API**:
-   - Node.js + Express o Python + FastAPI
-   - Base de datos PostgreSQL o MongoDB
-   - Autenticación JWT
-   - WebSockets para tiempo real
+```javascript
+// Configuración Odoo
+Database: odoo19
+UID: 5
+Token: 1fc63a72dcf97e88aab89c5a8a54dc0eac25cb9b
+URL: https://rsexpress.online/jsonrpc
+```
 
-2. **Integración de Mapas**:
-   - Google Maps API
-   - Cálculo real de rutas y distancias
-   - Visualización en tiempo real
+## 📁 Estructura
 
-3. **Pagos**:
-   - Stripe o MercadoPago
-   - Múltiples métodos de pago
-   - Facturación automática
+```
+RSExpress/
+├── docs/                          # 📚 Documentación (27 archivos)
+├── assets/                        # 🎨 CSS, imágenes, fuentes
+├── *.html                         # 🌐 Interfaces web
+├── *.js                           # 🔧 Lógica backend
+├── start-services.js              # 🚀 Punto de entrada
+└── package.json                   # 📦 Dependencias
+```
 
-4. **Notificaciones**:
-   - Firebase Cloud Messaging
-   - Email con SendGrid
-   - SMS con Twilio
+## 🎯 Funcionalidades Principales
 
-5. **Seguridad**:
-   - HTTPS obligatorio
-   - Rate limiting
-   - Validación de datos
-   - Encriptación de información sensible
+### ✅ Módulo Odoo CRM
+- Conectar a Odoo automáticamente
+- Obtener leads del CRM
+- Crear pedidos desde leads
+- Auto-detectar proxy local
+- Sincronización en tiempo real
 
-## 📄 Licencia
+### ✅ Gestor de Flota
+- Dashboard de vehículos
+- Asignación de conductores
+- Rutas optimizadas
+- Estado de vehículos en vivo
+- Historial de viajes
 
-Este proyecto es un demo/prototipo para RS Express.
+### ✅ Sistema de Entregas
+- Cola de espera
+- Asignación automática
+- Rastreo GPS
+- Cambio de estado
+- Notificaciones
 
-## 👥 Contacto
+### ✅ Rastreo
+- Integración Traccar
+- Localización en tiempo real
+- Historial de movimientos
+- Geofencing
 
-Para más información sobre RS Express, visita nuestro sitio web o contáctanos directamente.
+## 🚀 Comandos Útiles
+
+```bash
+# Iniciar servidor
+node start-services.js
+
+# Ver logs
+tail -f proxy.log
+
+# Buscar errores
+grep "ERROR" proxy.log
+
+# Reiniciar servidor
+pkill -f "node start-services"; sleep 2; node start-services.js
+
+# Ver puertos activos
+netstat -tlnp | grep node
+```
+
+## 🐛 Troubleshooting
+
+### "No se puede conectar a Odoo"
+→ Verificar QUICK_VERIFICATION.md
+
+### "Error de RPC"
+→ Ver JSON_RPC_CONFIG.md
+
+### "Puerto ya en uso"
+→ Cambiar puerto en start-services.js
+
+## 📞 Soporte
+
+Para más información, consulta la documentación en `/docs/`.
+
+## 📅 Última Actualización
+
+**Diciembre 1, 2025**
 
 ---
 
-**RS Express** - Tu servicio de delivery y mandados de confianza 🚀📦
+**Made with ❤️ for RSExpress**

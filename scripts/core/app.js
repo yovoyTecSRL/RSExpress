@@ -1,7 +1,41 @@
 // RS Express - Main Application Logic
+
+// User roles enum
+const USER_ROLES = {
+    CLIENTE: 'cliente',
+    DRIVER: 'driver',
+    ADMIN: 'admin'
+};
+
+// Predefined users database
+const USERS_DB = {
+    'andres': {
+        username: 'andres',
+        password: 'cliente123',
+        name: 'Andrés Rodríguez',
+        role: USER_ROLES.CLIENTE,
+        email: 'andres@rsexpress.com'
+    },
+    'fulgenzio': {
+        username: 'fulgenzio',
+        password: 'driver123',
+        name: 'Fulgencio González',
+        role: USER_ROLES.DRIVER,
+        email: 'fulgenzio@rsexpress.com'
+    },
+    'admin': {
+        username: 'admin',
+        password: 'admin123',
+        name: 'Administrador',
+        role: USER_ROLES.ADMIN,
+        email: 'admin@rsexpress.com'
+    }
+};
+
 class RSExpressApp {
     constructor() {
         this.currentUser = null;
+        this.userRole = null;
         this.trips = [];
         this.map = null;
         this.pickupMarker = null;
@@ -17,15 +51,38 @@ class RSExpressApp {
         this.driverMarker = null;
         this.trackingInterval = null;
         
+        // Traccar integration
+        this.traccar = null;
+        this.traccarDevices = new Map();
+        this.traccarApiKey = 'eyJkYXRhIjo1MDA1Nn0ubTFrRzRFdDBiRk1obDMyMVRGdXNFVHQxQXlTNGI3ODZtL0xYaFdZZmNQWQ';
+        
+        // Connection status
+        this.connectionStatus = 'disconnected';
+        
+        // Shipment routes and freight management
+        this.shipments = new Map();
+        this.routes = new Map();
+        this.freight = new Map();
+        
         this.init();
     }
 
     init() {
+        console.log('[RSExpress] Iniciando aplicación...');
         this.initMap();
         this.setupEventListeners();
         this.loadTripsFromStorage();
         this.checkLoginState();
         this.setDefaultDate();
+        
+        // Mostrar estado de conexión inmediatamente
+        this.updateConnectionStatus('connecting');
+        
+        // Inicializar Traccar después de un pequeño delay para asegurar DOM ready
+        setTimeout(() => {
+            console.log('[RSExpress] Iniciando Traccar después de DOM ready');
+            this.initTraccar();
+        }, 500);
     }
 
     initMap() {
@@ -249,11 +306,142 @@ class RSExpressApp {
         }
     }
 
+    setupMenuDashboard() {
+        const btnMenuDashboard = document.getElementById('btnMenuDashboard');
+        const menuDashboard = document.getElementById('menuDashboard');
+        const closeMenuDashboard = document.getElementById('closeMenuDashboard');
+        const dashboardOverlay = document.querySelector('.dashboard-overlay');
+        const dashboardItems = document.querySelectorAll('.dashboard-item');
+        const dashboardLogout = document.getElementById('dashboardLogout');
+
+        // Abrir menú
+        btnMenuDashboard?.addEventListener('click', (e) => {
+            e.stopPropagation();
+            menuDashboard?.classList.add('active');
+        });
+
+        // Cerrar menú
+        closeMenuDashboard?.addEventListener('click', () => {
+            menuDashboard?.classList.remove('active');
+        });
+
+        // Cerrar menú al hacer clic en overlay
+        dashboardOverlay?.addEventListener('click', () => {
+            menuDashboard?.classList.remove('active');
+        });
+
+        // Cerrar menú al hacer clic fuera
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.dashboard-menu') && !e.target.closest('.btn-menu-dashboard')) {
+                menuDashboard?.classList.remove('active');
+            }
+        });
+
+        // Manejar items del menú
+        dashboardItems.forEach(item => {
+            item.addEventListener('click', (e) => {
+                e.preventDefault();
+                const page = item.dataset.page;
+                if (page) {
+                    this.navigateTo(page);
+                    menuDashboard?.classList.remove('active');
+                }
+            });
+        });
+
+        // Logout desde el menú
+        dashboardLogout?.addEventListener('click', () => {
+            this.logout();
+            menuDashboard?.classList.remove('active');
+        });
+
+        // Cerrar menú al presionar Escape
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                menuDashboard?.classList.remove('active');
+            }
+        });
+    }
+
+    /**
+     * Configurar menú según el rol del usuario
+     */
+    setupMenuForRole() {
+        if (!this.currentUser) return;
+
+        // Filtrar items en barra de navegación
+        const navLinks = document.querySelectorAll('.nav-link');
+        navLinks.forEach(link => {
+            const page = link.getAttribute('data-page');
+            let showItem = true;
+
+            switch(this.userRole) {
+                case USER_ROLES.CLIENTE:
+                    // Cliente ve: Inicio, Mis Viajes, Flota, Ser Conductor, Perfil
+                    showItem = ['home', 'trips', 'fleet', 'driver', 'profile'].includes(page);
+                    break;
+                
+                case USER_ROLES.DRIVER:
+                    // Driver ve: Inicio, Flota, Panel Conductor, Historial, Estadísticas, Perfil
+                    showItem = ['home', 'fleet', 'driver-panel', 'history', 'stats', 'profile'].includes(page);
+                    break;
+                
+                case USER_ROLES.ADMIN:
+                    // Admin ve: Todo
+                    showItem = true;
+                    break;
+                
+                default:
+                    // No autenticado solo ve Inicio
+                    showItem = page === 'home';
+            }
+
+            link.style.display = showItem ? 'block' : 'none';
+        });
+
+        // Filtrar items en dashboard menu
+        const dashboardGrid = document.querySelector('.dashboard-grid');
+        const dashboardItems = dashboardGrid?.querySelectorAll('.dashboard-item');
+
+        dashboardItems?.forEach(item => {
+            const page = item.getAttribute('data-page');
+            let showItem = true;
+
+            switch(this.userRole) {
+                case USER_ROLES.CLIENTE:
+                    // Cliente ve: Inicio, Mis Viajes, Flota, Ser Conductor, Perfil
+                    showItem = ['home', 'trips', 'fleet', 'driver', 'profile'].includes(page);
+                    break;
+                
+                case USER_ROLES.DRIVER:
+                    // Driver ve: Inicio, Flota, Panel Conductor, Historial, Estadísticas, Perfil
+                    showItem = ['home', 'fleet', 'driver-panel', 'history', 'stats', 'profile'].includes(page);
+                    break;
+                
+                case USER_ROLES.ADMIN:
+                    // Admin ve: Todo
+                    showItem = true;
+                    break;
+                
+                default:
+                    // No autenticado solo ve Inicio
+                    showItem = page === 'home';
+            }
+
+            item.style.display = showItem ? 'flex' : 'none';
+        });
+
+        console.log(`[Menu] Configurado para rol: ${this.userRole}`);
+    }
+
     setupEventListeners() {
         // Theme toggle
         document.getElementById('themeToggle').addEventListener('click', () => {
             this.toggleTheme();
         });
+
+        // Menu Dashboard
+        this.setupMenuDashboard();
 
         // Navigation
         document.querySelectorAll('.nav-link').forEach(link => {
@@ -397,7 +585,7 @@ class RSExpressApp {
         // Show page
         document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
         document.getElementById(`${page}Page`).classList.add('active');
-
+        
         // Initialize page-specific functionality
         if (page === 'driver-panel') {
             this.initDriverPanel();
@@ -405,6 +593,12 @@ class RSExpressApp {
             this.initHistoryPage();
         } else if (page === 'stats') {
             this.initStatsPage();
+        } else if (page === 'fleet') {
+            this.loadFleet();
+        } else if (page === 'admin') {
+            this.loadAdminDashboard();
+        } else if (page === 'odooUsers') {
+            this.loadOdooUsersPage();
         }
 
         // Load page-specific content
@@ -888,21 +1082,45 @@ class RSExpressApp {
         const email = document.getElementById('loginEmail').value;
         const password = document.getElementById('loginPassword').value;
 
-        // Simulate login (in real app, call API)
-        const user = {
-            id: Date.now(),
-            name: email.split('@')[0],
-            email: email,
-            phone: '+1234567890',
+        if (!email || !password) {
+            this.showToast('Por favor completa todos los campos', 'warning');
+            return;
+        }
+
+        // Buscar usuario en la base de datos
+        const user = USERS_DB[email];
+        
+        if (!user || user.password !== password) {
+            this.showToast('Email o contraseña incorrectos', 'error');
+            return;
+        }
+
+        // Usuario autenticado
+        this.currentUser = {
+            username: user.username,
+            name: user.name,
+            email: user.email,
+            role: user.role,
             avatar: null
         };
-
-        this.currentUser = user;
-        localStorage.setItem('rsexpress_user', JSON.stringify(user));
         
-        this.updateUIForLoggedInUser();
-        this.closeModal('loginModal');
-        this.showToast(`¡Bienvenido, ${user.name}!`, 'success');
+        this.userRole = user.role;
+        
+        localStorage.setItem('rsexpress_user', JSON.stringify(this.currentUser));
+        
+        // Limpiar form
+        document.getElementById('loginForm').reset();
+        
+        // Cerrar modal primero
+        const loginModal = document.getElementById('loginModal');
+        loginModal.classList.remove('active');
+        
+        // Esperar a que se cierre el modal antes de actualizar UI
+        setTimeout(() => {
+            this.updateUIForLoggedInUser();
+            this.setupMenuForRole();
+            this.showToast(`¡Bienvenido, ${this.currentUser.name}!`, 'success');
+        }, 300);
     }
 
     register() {
@@ -927,11 +1145,13 @@ class RSExpressApp {
         this.closeModal('registerModal');
         this.showToast(`¡Cuenta creada exitosamente, ${user.name}!`, 'success');
     }
-
     logout() {
         this.currentUser = null;
+        this.userRole = null;
         localStorage.removeItem('rsexpress_user');
-        this.updateUIForLoggedInUser();
+        setTimeout(() => {
+            this.updateUIForLoggedInUser();
+        }, 50);
         this.navigateTo('home');
         this.showToast('Sesión cerrada', 'success');
     }
@@ -940,7 +1160,13 @@ class RSExpressApp {
         const savedUser = localStorage.getItem('rsexpress_user');
         if (savedUser) {
             this.currentUser = JSON.parse(savedUser);
-            this.updateUIForLoggedInUser();
+            this.userRole = this.currentUser.role;
+            this.setupMenuForRole();
+            
+            // Delay para asegurar que el DOM está listo
+            setTimeout(() => {
+                this.updateUIForLoggedInUser();
+            }, 100);
         }
 
         // Check saved theme preference
@@ -969,18 +1195,74 @@ class RSExpressApp {
     updateUIForLoggedInUser() {
         const loginBtn = document.getElementById('loginBtn');
         const userProfile = document.getElementById('userProfile');
+        const userAvatar = document.getElementById('userAvatar');
+        const userName = document.getElementById('userName');
 
         if (this.currentUser) {
-            loginBtn.style.display = 'none';
-            userProfile.style.display = 'flex';
-            document.getElementById('userName').textContent = this.currentUser.name;
+            if (loginBtn) loginBtn.style.display = 'none';
+            if (userProfile) userProfile.style.display = 'flex';
+            if (userName) userName.textContent = this.currentUser.name;
             
-            if (this.currentUser.avatar) {
-                document.getElementById('userAvatar').src = this.currentUser.avatar;
+            if (userAvatar) {
+                if (this.currentUser.avatar) {
+                    userAvatar.src = this.currentUser.avatar;
+                    userAvatar.onerror = () => this.generateInitialAvatar(this.currentUser.name);
+                } else {
+                    // Generar avatar con inicial del nombre
+                    this.generateInitialAvatar(this.currentUser.name);
+                }
             }
         } else {
-            loginBtn.style.display = 'block';
-            userProfile.style.display = 'none';
+            if (loginBtn) loginBtn.style.display = 'block';
+            if (userProfile) userProfile.style.display = 'none';
+        }
+    }
+
+    generateInitialAvatar(name) {
+        console.log('[RSExpress] Generando avatar para:', name);
+        
+        const initial = (name || 'U').charAt(0).toUpperCase();
+        const colors = {
+            'A': '#e74c3c', 'B': '#3498db', 'C': '#2ecc71', 'D': '#f39c12',
+            'E': '#9b59b6', 'F': '#1abc9c', 'G': '#34495e', 'H': '#e67e22',
+            'I': '#c0392b', 'J': '#16a085', 'K': '#8e44ad', 'L': '#27ae60',
+            'M': '#f1c40f', 'N': '#e74c3c', 'O': '#95a5a6', 'P': '#3498db',
+            'Q': '#2ecc71', 'R': '#f39c12', 'S': '#9b59b6', 'T': '#1abc9c',
+            'U': '#34495e', 'V': '#e67e22', 'W': '#c0392b', 'X': '#16a085',
+            'Y': '#8e44ad', 'Z': '#27ae60'
+        };
+        
+        const backgroundColor = colors[initial] || '#e74c3c';
+        
+        // Crear SVG usando método más confiable
+        const userAvatar = document.getElementById('userAvatar');
+        if (userAvatar) {
+            // Crear canvas para generar imagen
+            const canvas = document.createElement('canvas');
+            canvas.width = 200;
+            canvas.height = 200;
+            const ctx = canvas.getContext('2d');
+            
+            // Dibujar círculo de fondo
+            ctx.fillStyle = backgroundColor;
+            ctx.beginPath();
+            ctx.arc(100, 100, 100, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Dibujar texto
+            ctx.fillStyle = '#ffffff';
+            ctx.font = 'bold 100px Arial, sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(initial, 100, 100);
+            
+            // Convertir canvas a data URL
+            const dataUrl = canvas.toDataURL('image/png');
+            userAvatar.src = dataUrl;
+            userAvatar.alt = `Avatar de ${name}`;
+            console.log('[RSExpress] ✅ Avatar generado exitosamente para:', initial);
+        } else {
+            console.warn('[RSExpress] ❌ No se encontró elemento userAvatar');
         }
     }
 
@@ -1628,10 +1910,1235 @@ class RSExpressApp {
             });
         }
     }
+
+    /**
+     * Actualizar estado de conexión en el bulb
+     */
+    updateConnectionStatus(status) {
+        this.connectionStatus = status;
+        console.log('[RSExpress] Actualizando estado de conexión a:', status);
+        
+        const bulb = document.getElementById('connectionBulb');
+        const tooltip = document.getElementById('bulbTooltip');
+        
+        if (!bulb) {
+            console.warn('[RSExpress] ❌ Elemento connectionBulb no encontrado');
+            return;
+        }
+        
+        // Log de clases actuales
+        console.log('[RSExpress] Clases actuales del bulbo:', bulb.className);
+        
+        // Remover clases anteriores de forma explícita
+        bulb.classList.remove('connected');
+        bulb.classList.remove('connecting');
+        bulb.classList.remove('disconnected');
+        
+        // Agregar clase según estado
+        if (status === 'connected') {
+            bulb.classList.add('connected');
+            if (tooltip) tooltip.textContent = '🟢 Conectado';
+            console.log('[RSExpress] ✅ Bulbo actualizado a CONECTADO - Clases:', bulb.className);
+        } else if (status === 'connecting') {
+            bulb.classList.add('connecting');
+            if (tooltip) tooltip.textContent = '🟡 Conectando...';
+            console.log('[RSExpress] 🟡 Bulbo actualizado a CONECTANDO - Clases:', bulb.className);
+        } else {
+            bulb.classList.add('disconnected');
+            if (tooltip) tooltip.textContent = '🔴 Desconectado';
+            console.log('[RSExpress] ❌ Bulbo actualizado a DESCONECTADO - Clases:', bulb.className);
+        }
+    }
+
+    /**
+     * Crear un nuevo envío vinculado con ruta y flete
+     */
+    createShipment(shipmentData) {
+        const shipmentId = 'SHP' + Date.now();
+        
+        const shipment = {
+            id: shipmentId,
+            status: 'pending',
+            pickup: shipmentData.pickup,
+            delivery: shipmentData.delivery,
+            weight: shipmentData.weight || 0,
+            dimensions: shipmentData.dimensions || {},
+            description: shipmentData.description || '',
+            timestamp: new Date(),
+            routeId: null,
+            freightId: null,
+            price: shipmentData.price || 0,
+            driver: null,
+            vehicle: null
+        };
+        
+        this.shipments.set(shipmentId, shipment);
+        console.log(`[Shipment] Envío creado: ${shipmentId}`);
+        
+        return shipment;
+    }
+
+    /**
+     * Crear una ruta para un conductor
+     */
+    createRoute(routeData) {
+        const routeId = 'RTE' + Date.now();
+        
+        const route = {
+            id: routeId,
+            driverId: routeData.driverId,
+            driverName: routeData.driverName || 'Driver',
+            startTime: new Date(),
+            endTime: null,
+            startLocation: routeData.startLocation,
+            currentLocation: routeData.startLocation,
+            stops: [],
+            totalDistance: 0,
+            estimatedTime: routeData.estimatedTime || 0,
+            shipments: [],
+            status: 'active',
+            vehicle: routeData.vehicle || {}
+        };
+        
+        this.routes.set(routeId, route);
+        console.log(`[Route] Ruta creada: ${routeId}`);
+        
+        return route;
+    }
+
+    /**
+     * Crear registro de flete
+     */
+    createFreight(freightData) {
+        const freightId = 'FRT' + Date.now();
+        
+        const freight = {
+            id: freightId,
+            shipmentId: freightData.shipmentId,
+            routeId: freightData.routeId,
+            weight: freightData.weight,
+            volume: freightData.volume,
+            type: freightData.type, // 'standard', 'fragile', 'perishable', etc
+            value: freightData.value || 0,
+            insuranceRequired: freightData.insuranceRequired || false,
+            specialHandling: freightData.specialHandling || [],
+            trackingNumber: 'TRK' + Math.random().toString(36).substr(2, 9).toUpperCase(),
+            createdAt: new Date()
+        };
+        
+        this.freight.set(freightId, freight);
+        console.log(`[Freight] Flete registrado: ${freightId}`);
+        
+        return freight;
+    }
+
+    /**
+     * Vincular envío con ruta
+     */
+    assignShipmentToRoute(shipmentId, routeId) {
+        const shipment = this.shipments.get(shipmentId);
+        const route = this.routes.get(routeId);
+        
+        if (!shipment || !route) {
+            console.error('Envío o ruta no encontrada');
+            return false;
+        }
+        
+        shipment.routeId = routeId;
+        shipment.driver = route.driverName;
+        shipment.vehicle = route.vehicle;
+        shipment.status = 'assigned';
+        
+        route.shipments.push(shipmentId);
+        route.stops.push({
+            location: shipment.delivery,
+            shipmentId: shipmentId,
+            order: route.stops.length + 1
+        });
+        
+        console.log(`[Assignment] Envío ${shipmentId} asignado a ruta ${routeId}`);
+        
+        this.showToast(`Envío asignado a ${route.driverName}`, 'success');
+        
+        return true;
+    }
+
+    /**
+     * Vincular flete con envío
+     */
+    linkFreightToShipment(freightId, shipmentId) {
+        const freight = this.freight.get(freightId);
+        const shipment = this.shipments.get(shipmentId);
+        
+        if (!freight || !shipment) {
+            console.error('Flete o envío no encontrada');
+            return false;
+        }
+        
+        freight.shipmentId = shipmentId;
+        shipment.freightId = freightId;
+        
+        console.log(`[Linking] Flete ${freightId} vinculado a envío ${shipmentId}`);
+        
+        return true;
+    }
+
+    /**
+     * Obtener información completa de un envío
+     */
+    getShipmentDetails(shipmentId) {
+        const shipment = this.shipments.get(shipmentId);
+        
+        if (!shipment) return null;
+        
+        const route = shipment.routeId ? this.routes.get(shipment.routeId) : null;
+        const freight = shipment.freightId ? this.freight.get(shipment.freightId) : null;
+        
+        return {
+            shipment,
+            route,
+            freight,
+            fullInfo: {
+                id: shipment.id,
+                status: shipment.status,
+                pickupAddress: shipment.pickup,
+                deliveryAddress: shipment.delivery,
+                description: shipment.description,
+                price: shipment.price,
+                driver: shipment.driver,
+                vehicle: shipment.vehicle,
+                weight: freight?.weight || shipment.weight,
+                volume: freight?.volume,
+                freightType: freight?.type,
+                trackingNumber: freight?.trackingNumber,
+                route: route?.id,
+                estimatedTime: route?.estimatedTime
+            }
+        };
+    }
+
+    /**
+     * Obtener todas las rutas activas
+     */
+    getActiveRoutes() {
+        const activeRoutes = [];
+        this.routes.forEach(route => {
+            if (route.status === 'active') {
+                activeRoutes.push(route);
+            }
+        });
+        return activeRoutes;
+    }
+
+    /**
+     * Obtener envíos pendientes
+     */
+    getPendingShipments() {
+        const pending = [];
+        this.shipments.forEach(shipment => {
+            if (shipment.status === 'pending') {
+                pending.push(shipment);
+            }
+        });
+        return pending;
+    }
+
+    /**
+     * Actualizar estado del envío
+     */
+    updateShipmentStatus(shipmentId, newStatus) {
+        const shipment = this.shipments.get(shipmentId);
+        if (!shipment) return false;
+        
+        const oldStatus = shipment.status;
+        shipment.status = newStatus;
+        
+        // Actualizar ruta si está asignada
+        if (shipment.routeId) {
+            const route = this.routes.get(shipment.routeId);
+            if (route && newStatus === 'delivered') {
+                const stopIndex = route.stops.findIndex(s => s.shipmentId === shipmentId);
+                if (stopIndex !== -1) {
+                    route.stops[stopIndex].status = 'completed';
+                }
+            }
+        }
+        
+        console.log(`[Shipment] ${shipmentId}: ${oldStatus} → ${newStatus}`);
+        
+        return true;
+    }
+
+    /**
+     * Obtener estadísticas de envíos y rutas
+     */
+    getShipmentsStats() {
+        let totalShipments = this.shipments.size;
+        let pendingShipments = 0;
+        let assignedShipments = 0;
+        let deliveredShipments = 0;
+        let totalValue = 0;
+        
+        this.shipments.forEach(shipment => {
+            if (shipment.status === 'pending') pendingShipments++;
+            else if (shipment.status === 'assigned') assignedShipments++;
+            else if (shipment.status === 'delivered') deliveredShipments++;
+            totalValue += shipment.price;
+        });
+        
+        let totalDistance = 0;
+        let activeRoutesCount = 0;
+        
+        this.routes.forEach(route => {
+            if (route.status === 'active') {
+                activeRoutesCount++;
+                totalDistance += route.totalDistance;
+            }
+        });
+        
+        return {
+            totalShipments,
+            pendingShipments,
+            assignedShipments,
+            deliveredShipments,
+            totalValue,
+            activeRoutes: activeRoutesCount,
+            totalDistance: totalDistance.toFixed(2),
+            freightRecords: this.freight.size
+        };
+    }
+
+    /**
+     * Inicializar Traccar para rastreo en tiempo real
+     */
+    async initTraccar() {
+        try {
+            console.log('[RSExpress] Iniciando sistema Traccar...');
+            
+            // Actualizar estado a conectando
+            this.updateConnectionStatus('connecting');
+            
+            // Inicializar instancia de Traccar si existe la clase
+            if (typeof TraccarIntegration !== 'undefined') {
+                console.log('[RSExpress] Clase TraccarIntegration detectada');
+                this.traccar = new TraccarIntegration(this.traccarApiKey);
+                
+                // Configurar callbacks
+                this.traccar.onPositionUpdate = (position) => {
+                    console.log('[RSExpress] Actualización de posición recibida');
+                    this.handleTraccarPositionUpdate(position);
+                };
+                
+                this.traccar.onDeviceStatusChange = (device) => {
+                    console.log('[RSExpress] Cambio de estado de dispositivo:', device);
+                    this.handleTraccarDeviceStatusChange(device);
+                };
+                
+                this.traccar.onEventReceived = (event) => {
+                    console.log('[RSExpress] Evento recibido:', event);
+                    this.handleTraccarEvent(event);
+                };
+                
+                // Inicializar conexión con timeout de 5 segundos
+                console.log('[RSExpress] Intentando conectar con Traccar (timeout: 5s)...');
+                
+                const initPromise = this.traccar.initialize();
+                const timeoutPromise = new Promise((_, reject) => 
+                    setTimeout(() => reject(new Error('Timeout de conexión')), 5000)
+                );
+                
+                let initialized = false;
+                try {
+                    initialized = await Promise.race([initPromise, timeoutPromise]);
+                } catch (timeoutError) {
+                    console.warn('[RSExpress] Timeout en inicialización de Traccar:', timeoutError.message);
+                    initialized = false;
+                }
+                
+                console.log('[RSExpress] Resultado de inicialización:', initialized);
+                
+                if (initialized) {
+                    console.log('[RSExpress] Traccar inicializado exitosamente');
+                    this.updateConnectionStatus('connected');
+                    this.showToast('✅ Sistema de rastreo activado', 'success');
+                    
+                    // Cargar dispositivos disponibles
+                    this.updateTraccarDevicesList();
+                } else {
+                    console.warn('[RSExpress] No se pudo conectar - usando modo DEMO automático');
+                    // Simular modo demo como fallback
+                    this.traccar.simulateDemoMode?.();
+                    this.updateConnectionStatus('connected');
+                    this.showToast('🟡 Modo DEMO (dispositivos simulados)', 'warning');
+                    this.updateTraccarDevicesList();
+                }
+            } else {
+                console.warn('[RSExpress] Clase TraccarIntegration NO está disponible');
+                this.updateConnectionStatus('disconnected');
+                this.showToast('❌ Traccar no disponible', 'error');
+            }
+        } catch (error) {
+            console.error('[RSExpress] Error crítico en inicialización de Traccar:', error);
+            this.updateConnectionStatus('disconnected');
+            this.showToast('❌ Error de conexión', 'error');
+        }
+    }
+
+    /**
+     * Actualizar lista de dispositivos disponibles en Traccar
+     */
+    updateTraccarDevicesList() {
+        if (!this.traccar) return;
+        
+        this.traccarDevices.clear();
+        this.traccar.devices.forEach((device, deviceId) => {
+            this.traccarDevices.set(deviceId, {
+                id: device.id,
+                name: device.name,
+                status: device.status,
+                lastUpdate: device.lastUpdate
+            });
+        });
+        
+        console.log(`[RSExpress] ${this.traccarDevices.size} dispositivos Traccar disponibles`);
+    }
+
+    /**
+     * Manejar actualización de posición desde Traccar
+     */
+    handleTraccarPositionUpdate(position) {
+        try {
+            const deviceId = position.deviceId;
+            const device = this.traccar.devices.get(deviceId);
+            
+            if (!device) return;
+            
+            console.log(`[RSExpress] Actualización de posición: ${device.name}`);
+            
+            // Si hay un rastreo activo, actualizar el mapa
+            if (this.activeTracking && this.activeTracking.deviceId === deviceId) {
+                this.updateTrackingMapPosition(position);
+            }
+            
+            // Actualizar información en viajes activos
+            this.updateTripWithTraccarData(deviceId, position);
+        } catch (error) {
+            console.error('[RSExpress] Error al procesar actualización de posición:', error);
+        }
+    }
+
+    /**
+     * Actualizar posición en el mapa de rastreo
+     */
+    updateTrackingMapPosition(position) {
+        try {
+            if (!this.trackingMap) return;
+            
+            const { latitude, longitude, speed, course, accuracy } = position;
+            
+            // Actualizar marcador del conductor
+            if (this.driverMarker) {
+                this.trackingMap.removeLayer(this.driverMarker);
+            }
+            
+            // Crear marcador con ícono de vehículo rotado según dirección
+            const vehicleIcon = L.icon({
+                iconUrl: `data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MCIgaGVpZ2h0PSI0MCIgdmlld0JveD0iMCAwIDQwIDQwIj48Y2lyY2xlIGN4PSIyMCIgY3k9IjIwIiByPSIxOCIgZmlsbD0iIzI3YWU2MCIgc3Ryb2tlPSJ3aGl0ZSIgc3Ryb2tlLXdpZHRoPSIyIi8+PHBvbHlnb24gcG9pbnRzPSIyMCw1IDM1LDM1IDIwLDMwIDUsMzUiIGZpbGw9IndoaXRlIiB0cmFuc2Zvcm09InJvdGF0ZSgke2NvdXJzZSB8fCAwfSAyMCAyMCkiLz48L3N2Zz4=`,
+                iconSize: [40, 40],
+                iconAnchor: [20, 20],
+                popupAnchor: [0, -20]
+            });
+            
+            this.driverMarker = L.marker([latitude, longitude], { icon: vehicleIcon })
+                .addTo(this.trackingMap)
+                .bindPopup(`
+                    <div class="popup-content">
+                        <p><strong>Velocidad:</strong> ${(speed || 0).toFixed(1)} km/h</p>
+                        <p><strong>Precisión:</strong> ${(accuracy || 0).toFixed(1)} m</p>
+                    </div>
+                `);
+            
+            // Centrar mapa en la posición actual
+            this.trackingMap.setView([latitude, longitude], 15);
+            
+            // Actualizar información de distancia y tiempo
+            if (this.pickupCoords && this.deliveryCoords) {
+                const distToDelivery = this.traccar.calculateDistance(
+                    latitude, longitude,
+                    this.deliveryCoords.lat, this.deliveryCoords.lng
+                );
+                
+                document.getElementById('trackingDistance').textContent = `${distToDelivery.toFixed(2)} km`;
+                
+                // Estimar tiempo (velocidad promedio 30 km/h)
+                const estimatedTime = Math.round((distToDelivery / 30) * 60);
+                document.getElementById('trackingTime').textContent = `${estimatedTime} min`;
+            }
+        } catch (error) {
+            console.error('[RSExpress] Error al actualizar posición en mapa:', error);
+        }
+    }
+
+    /**
+     * Manejar cambio de estado de dispositivo
+     */
+    handleTraccarDeviceStatusChange(device) {
+        console.log(`[RSExpress] Estado de dispositivo ${device.name}: ${device.status}`);
+        
+        // Actualizar en interfaz
+        const statusElement = document.querySelector(`[data-device-id="${device.id}"] .device-status`);
+        if (statusElement) {
+            statusElement.textContent = device.status === 'online' ? 'En línea' : 'Desconectado';
+            statusElement.className = `device-status ${device.status}`;
+        }
+    }
+
+    /**
+     * Manejar evento recibido desde Traccar
+     */
+    handleTraccarEvent(event) {
+        console.log('[RSExpress] Evento Traccar:', event);
+        
+        // Tipos de eventos comunes
+        const eventMessages = {
+            'deviceOnline': '✓ Dispositivo en línea',
+            'deviceOffline': '✗ Dispositivo desconectado',
+            'deviceMoving': '▶ Vehículo en movimiento',
+            'deviceStopped': '⏸ Vehículo detenido',
+            'geofenceEnter': '📍 Entrada a zona',
+            'geofenceExit': '📍 Salida de zona',
+            'speedExceeded': '⚠ Velocidad excedida',
+            'maintenanceRequired': '🔧 Mantenimiento requerido'
+        };
+        
+        const message = eventMessages[event.type] || event.type;
+        this.showToast(message, 'info');
+    }
+
+    /**
+     * Actualizar viaje con datos de Traccar
+     */
+    updateTripWithTraccarData(deviceId, position) {
+        try {
+            // Buscar viaje activo asociado a este dispositivo
+            const activeTrip = this.trips.find(trip => 
+                trip.status === 'active' && trip.driverTraccarId === deviceId
+            );
+            
+            if (activeTrip) {
+                activeTrip.lastPosition = {
+                    lat: position.latitude,
+                    lng: position.longitude,
+                    speed: position.speed,
+                    timestamp: position.fixTime
+                };
+                
+                // Guardar cambios
+                this.saveTripsToStorage();
+            }
+        } catch (error) {
+            console.error('[RSExpress] Error al actualizar viaje con datos de Traccar:', error);
+        }
+    }
+
+    /**
+     * Iniciar rastreo de un viaje con Traccar
+     */
+    async startTraccarTracking(trip, deviceId) {
+        try {
+            if (!this.traccar) {
+                this.showToast('Sistema de rastreo no disponible', 'error');
+                return false;
+            }
+            
+            // Obtener posición inicial
+            const position = await this.traccar.getDevicePosition(deviceId);
+            if (!position) {
+                this.showToast('No se pudo obtener la posición del vehículo', 'error');
+                return false;
+            }
+            
+            this.activeTracking = {
+                tripId: trip.id,
+                deviceId: deviceId,
+                startTime: new Date(),
+                positions: [position]
+            };
+            
+            // Mostrar mapa de rastreo
+            this.initTrackingMap(position);
+            
+            console.log('[RSExpress] Rastreo con Traccar iniciado para dispositivo:', deviceId);
+            return true;
+        } catch (error) {
+            console.error('[RSExpress] Error al iniciar rastreo con Traccar:', error);
+            return false;
+        }
+    }
+
+    /**
+     * Detener rastreo
+     */
+    stopTraccarTracking() {
+        if (this.activeTracking && this.traccar) {
+            const stats = this.traccar.calculateDrivingStats(this.activeTracking.positions);
+            
+            console.log('[RSExpress] Estadísticas de rastreo:', stats);
+            
+            this.activeTracking = null;
+            
+            // Mostrar resumen
+            this.showToast(
+                `Viaje completado: ${stats.distance} km en ${stats.duration} min`,
+                'success'
+            );
+        }
+    }
+
+    /**
+     * Obtener reporte de actividad desde Traccar
+     */
+    async getTraccarActivityReport(deviceId, from, to) {
+        try {
+            if (!this.traccar) return null;
+            
+            const report = await this.traccar.generateActivityReport(deviceId, from, to);
+            return report;
+        } catch (error) {
+            console.error('[RSExpress] Error al obtener reporte de actividad:', error);
+            return null;
+        }
+    }
+
+    /**
+     * Obtener estadísticas de conducción desde Traccar
+     */
+    async getTraccarDrivingStats(deviceId, from, to) {
+        try {
+            if (!this.traccar) return null;
+            
+            const positions = await this.traccar.getPositionHistory(deviceId, from, to);
+            const stats = this.traccar.calculateDrivingStats(positions);
+            
+            return stats;
+        } catch (error) {
+            console.error('[RSExpress] Error al obtener estadísticas de conducción:', error);
+            return null;
+        }
+    }
+
+    /**
+     * Verificar estado de conexión de Traccar
+     */
+    getTraccarStatus() {
+        if (!this.traccar) {
+            return {
+                connected: false,
+                message: 'No disponible'
+            };
+        }
+        
+        return this.traccar.getConnectionStatus();
+    }
+
+    /**
+     * Cargar y mostrar unidades de flota desde Traccar o DriverFleetPanel
+     */
+    async loadFleet() {
+        console.log('[Fleet] Cargando unidades de flota...');
+        
+        try {
+            let devices = [];
+
+            // Intentar usar DriverFleetPanel primero (si está disponible)
+            if (window.driverFleetPanel && window.driverFleetPanel.drivers.size > 0) {
+                console.log('[Fleet] Usando DriverFleetPanel');
+                const snapshot = getFleetSnapshot();
+                // Transformar drivers a formato esperado
+                devices = snapshot.drivers.map(driver => ({
+                    id: driver.id,
+                    name: driver.name,
+                    status: driver.status === 'activo' ? 'online' : 'offline',
+                    lastUpdate: new Date().toISOString(),
+                    latitude: driver.lat,
+                    longitude: driver.lon,
+                    speed: 0,
+                    vehicle: driver.vehicle,
+                    phone: driver.phone,
+                    completedDeliveries: driver.completedDeliveries,
+                    efficiency: driver.efficiency
+                })) || [];
+            }
+            // Si no, usar Traccar
+            else if (this.traccar) {
+                console.log('[Fleet] Usando Traccar');
+                devices = this.traccar.getDevices() || [];
+            }
+            else {
+                console.error('[Fleet] Ni DriverFleetPanel ni Traccar disponibles');
+                this.displayFleetEmpty();
+                return;
+            }
+            
+            if (!devices || devices.length === 0) {
+                console.warn('[Fleet] No hay dispositivos disponibles');
+                this.displayFleetEmpty();
+                return;
+            }
+
+            console.log(`[Fleet] ${devices.length} dispositivo(s) encontrado(s)`, devices);
+
+            // Actualizar estadísticas
+            this.updateFleetStats(devices);
+
+            // Mostrar unidades en grid
+            this.displayFleetUnits(devices);
+
+        } catch (error) {
+            console.error('[Fleet] Error cargando flota:', error);
+            this.displayFleetError();
+        }
+    }
+
+    /**
+     * Actualizar estadísticas de flota
+     */
+    updateFleetStats(devices) {
+        try {
+            const onlineUnits = devices.filter(d => d.status === 'online').length;
+            const offlineUnits = devices.length - onlineUnits;
+
+            const totalElement = document.querySelector('[data-stat="total"]');
+            const onlineElement = document.querySelector('[data-stat="online"]');
+            const offlineElement = document.querySelector('[data-stat="offline"]');
+
+            if (totalElement) totalElement.textContent = devices.length;
+            if (onlineElement) onlineElement.textContent = onlineUnits;
+            if (offlineElement) offlineElement.textContent = offlineUnits;
+
+            console.log(`[Fleet] Estadísticas actualizadas: Total=${devices.length}, Online=${onlineUnits}, Offline=${offlineUnits}`);
+
+        } catch (error) {
+            console.error('[Fleet] Error actualizando estadísticas:', error);
+        }
+    }
+
+    /**
+     * Mostrar unidades de flota en grid
+     */
+    displayFleetUnits(devices) {
+        const fleetList = document.getElementById('fleet-list');
+        
+        if (!fleetList) {
+            console.error('[Fleet] Elemento fleet-list no encontrado');
+            return;
+        }
+
+        // Limpiar contenido previo
+        fleetList.innerHTML = '';
+
+        // Crear tarjeta para cada dispositivo
+        devices.forEach(device => {
+            const card = this.createFleetCard(device);
+            fleetList.appendChild(card);
+        });
+
+        console.log(`[Fleet] ${devices.length} tarjeta(s) de vehículo renderizadas`);
+    }
+
+    /**
+     * Crear tarjeta de vehículo
+     */
+    createFleetCard(device) {
+        const card = document.createElement('div');
+        card.className = 'fleet-card';
+        card.setAttribute('data-device-id', device.id);
+
+        const isOnline = device.status === 'online';
+        const lastUpdate = device.lastUpdate ? new Date(device.lastUpdate).toLocaleTimeString() : 'N/A';
+        const speed = device.speed || 0;
+
+        const statusClass = isOnline ? 'online' : 'offline';
+        const statusText = isOnline ? '🟢 En línea' : '🔴 Desconectado';
+
+        card.innerHTML = `
+            <div class="fleet-card-header">
+                <div class="fleet-unit-name">${device.name}</div>
+                <div class="fleet-unit-status ${statusClass}">
+                    <span class="status-dot"></span>
+                    ${statusText}
+                </div>
+            </div>
+
+            <div class="fleet-info">
+                <div class="fleet-info-row">
+                    <span class="fleet-info-label">ID Dispositivo:</span>
+                    <span class="fleet-info-value">#${device.id}</span>
+                </div>
+                <div class="fleet-info-row">
+                    <span class="fleet-info-label">Velocidad:</span>
+                    <span class="fleet-info-value">${speed} km/h</span>
+                </div>
+                <div class="fleet-info-row">
+                    <span class="fleet-info-label">Posición:</span>
+                    <span class="fleet-info-value">${device.latitude ? `${device.latitude.toFixed(4)}, ${device.longitude.toFixed(4)}` : 'Sin datos'}</span>
+                </div>
+                <div class="fleet-info-row">
+                    <span class="fleet-info-label">Última actualización:</span>
+                    <span class="fleet-info-value">${lastUpdate}</span>
+                </div>
+                ${device.odometer ? `
+                <div class="fleet-info-row">
+                    <span class="fleet-info-label">Odómetro:</span>
+                    <span class="fleet-info-value">${(device.odometer / 1000).toFixed(2)} km</span>
+                </div>
+                ` : ''}
+            </div>
+
+            <div class="fleet-actions">
+                <button class="fleet-btn" onclick="app.focusDeviceOnMap(${device.id})">
+                    <i class="fas fa-map-marker-alt"></i> Ver en Mapa
+                </button>
+                <button class="fleet-btn secondary" onclick="app.showDeviceDetails(${device.id})">
+                    <i class="fas fa-info-circle"></i> Detalles
+                </button>
+            </div>
+        `;
+
+        return card;
+    }
+
+    /**
+     * Enfocar dispositivo en el mapa
+     */
+    focusDeviceOnMap(deviceId) {
+        console.log(`[Fleet] Enfocando dispositivo ${deviceId} en mapa`);
+        
+        try {
+            // Cambiar a pestaña de inicio para ver el mapa
+            const homeLink = document.querySelector('a[onclick="app.showPage(\'homePage\')"]');
+            if (homeLink) homeLink.click();
+
+            // Buscar el dispositivo
+            if (!this.traccar) return;
+
+            const devices = this.traccar.devices;
+            const device = devices.find(d => d.id === deviceId);
+
+            if (device && device.latitude && device.longitude && this.map) {
+                // Centrar mapa en dispositivo
+                this.map.setView([device.latitude, device.longitude], 16);
+                
+                // Crear marcador visible
+                if (this.deviceMarkers && this.deviceMarkers[deviceId]) {
+                    this.deviceMarkers[deviceId].openPopup();
+                }
+
+                console.log(`[Fleet] Mapa enfocado en dispositivo ${device.name}`);
+            }
+        } catch (error) {
+            console.error('[Fleet] Error enfocando en mapa:', error);
+        }
+    }
+
+    /**
+     * Mostrar detalles del dispositivo
+     */
+    showDeviceDetails(deviceId) {
+        console.log(`[Fleet] Mostrando detalles del dispositivo ${deviceId}`);
+        
+        try {
+            if (!this.traccar) return;
+
+            const devices = this.traccar.devices;
+            const device = devices.find(d => d.id === deviceId);
+
+            if (!device) {
+                console.error('[Fleet] Dispositivo no encontrado');
+                return;
+            }
+
+            // Crear modal con detalles
+            const modal = document.createElement('div');
+            modal.className = 'modal active';
+            modal.id = 'deviceDetailsModal';
+            modal.innerHTML = `
+                <div class="modal-content" style="max-width: 500px;">
+                    <div class="modal-header">
+                        <h2>${device.name}</h2>
+                        <button class="close-modal" onclick="document.getElementById('deviceDetailsModal').remove()">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <div style="display: grid; gap: 1rem;">
+                            <div>
+                                <p style="margin: 0.5rem 0; color: #888; font-size: 0.9rem;">INFORMACIÓN DEL VEHÍCULO</p>
+                                <p style="margin: 0.25rem 0;"><strong>ID Dispositivo:</strong> #${device.id}</p>
+                                <p style="margin: 0.25rem 0;"><strong>Estado:</strong> 
+                                    <span style="color: ${device.status === 'online' ? '#27ae60' : '#e74c3c'};">
+                                        ${device.status === 'online' ? '🟢 En línea' : '🔴 Desconectado'}
+                                    </span>
+                                </p>
+                            </div>
+                            <div>
+                                <p style="margin: 0.5rem 0; color: #888; font-size: 0.9rem;">UBICACIÓN ACTUAL</p>
+                                <p style="margin: 0.25rem 0;"><strong>Latitud:</strong> ${device.latitude ? device.latitude.toFixed(6) : 'N/A'}</p>
+                                <p style="margin: 0.25rem 0;"><strong>Longitud:</strong> ${device.longitude ? device.longitude.toFixed(6) : 'N/A'}</p>
+                                <p style="margin: 0.25rem 0;"><strong>Velocidad:</strong> ${device.speed || 0} km/h</p>
+                            </div>
+                            <div>
+                                <p style="margin: 0.5rem 0; color: #888; font-size: 0.9rem;">ESTADÍSTICAS</p>
+                                <p style="margin: 0.25rem 0;"><strong>Odómetro:</strong> ${device.odometer ? (device.odometer / 1000).toFixed(2) : 'N/A'} km</p>
+                                <p style="margin: 0.25rem 0;"><strong>Última actualización:</strong> ${device.lastUpdate ? new Date(device.lastUpdate).toLocaleString() : 'N/A'}</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button class="btn-secondary" onclick="document.getElementById('deviceDetailsModal').remove()">Cerrar</button>
+                        <button class="btn-primary" onclick="app.focusDeviceOnMap(${device.id}); document.getElementById('deviceDetailsModal').remove();">
+                            Ver en Mapa
+                        </button>
+                    </div>
+                </div>
+            `;
+
+            document.body.appendChild(modal);
+
+            console.log(`[Fleet] Detalles mostrados para ${device.name}`);
+
+        } catch (error) {
+            console.error('[Fleet] Error mostrando detalles:', error);
+        }
+    }
+
+    /**
+     * Mostrar mensaje cuando no hay unidades
+     */
+    displayFleetEmpty() {
+        const fleetList = document.getElementById('fleet-list');
+        
+        if (!fleetList) return;
+
+        fleetList.innerHTML = `
+            <div style="grid-column: 1 / -1; text-align: center; padding: 3rem 1rem;">
+                <i class="fas fa-inbox" style="font-size: 3rem; color: var(--gray-light); margin-bottom: 1rem; display: block;"></i>
+                <p style="color: var(--gray-light); font-size: 1.1rem;">No hay unidades disponibles en tu flota</p>
+                <p style="color: var(--gray-light); font-size: 0.9rem; margin-top: 0.5rem;">Agrega dispositivos en Traccar para comenzar</p>
+            </div>
+        `;
+    }
+
+    /**
+     * Mostrar mensaje de error
+     */
+    displayFleetError() {
+        const fleetList = document.getElementById('fleet-list');
+        
+        if (!fleetList) return;
+
+        fleetList.innerHTML = `
+            <div style="grid-column: 1 / -1; text-align: center; padding: 3rem 1rem;">
+                <i class="fas fa-exclamation-circle" style="font-size: 3rem; color: var(--primary-color); margin-bottom: 1rem; display: block;"></i>
+                <p style="color: var(--primary-color); font-size: 1.1rem;">Error cargando flota</p>
+                <p style="color: var(--gray-light); font-size: 0.9rem; margin-top: 0.5rem;">Intenta nuevamente más tarde</p>
+            </div>
+        `;
+    }
+
+    /**
+     * Cargar datos del admin dashboard
+     */
+    loadAdminDashboard() {
+        console.log('[Admin] Cargando dashboard administrativo...');
+        
+        // Actualizar resúmenes
+        this.updateAdminSummary();
+        
+        // Cargar datos de entregas
+        this.loadAdminDeliveries();
+        
+        // Setup tab switching
+        this.setupAdminTabs();
+    }
+
+    /**
+     * Actualizar resumen de admin
+     */
+    updateAdminSummary() {
+        // Datos simulados para demostración
+        const summary = {
+            totalDeliveries: this.trips.length,
+            activeClients: 3,
+            onlineDrivers: 2,
+            todayRevenue: this.trips.length * 15
+        };
+
+        document.getElementById('adminTotalDeliveries').textContent = summary.totalDeliveries;
+        document.getElementById('adminActiveClients').textContent = summary.activeClients;
+        document.getElementById('adminOnlineDrivers').textContent = summary.onlineDrivers;
+        document.getElementById('adminTodayRevenue').textContent = `$${summary.todayRevenue.toFixed(2)}`;
+    }
+
+    /**
+     * Cargar entregas en el admin dashboard
+     */
+    loadAdminDeliveries() {
+        const deliveriesList = document.getElementById('deliveriesList');
+        
+        if (!deliveriesList) return;
+
+        if (this.trips.length === 0) {
+            deliveriesList.innerHTML = '<div style="text-align: center; padding: 2rem; color: var(--gray-light);">No hay entregas registradas</div>';
+            return;
+        }
+
+        const html = this.trips.map((trip, index) => `
+            <div class="list-item">
+                <span>#${index + 1001}</span>
+                <span>${trip.pickupLocation || 'N/A'}</span>
+                <span>Conductor ${index + 1}</span>
+                <span>Completado</span>
+                <span>${new Date(trip.date || Date.now()).toLocaleDateString()}</span>
+                <button class="item-action-btn" title="Ver detalles">
+                    <i class="fas fa-eye"></i>
+                </button>
+            </div>
+        `).join('');
+
+        deliveriesList.innerHTML = html;
+    }
+
+    /**
+     * Setup admin tabs functionality
+     */
+    setupAdminTabs() {
+        const adminTabBtns = document.querySelectorAll('.admin-tab-btn');
+        
+        adminTabBtns.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const tabName = btn.getAttribute('data-tab');
+                this.switchAdminTab(tabName);
+            });
+        });
+    }
+
+    /**
+     * Cambiar tab del admin
+     */
+    switchAdminTab(tabName) {
+        // Desactivar todos los tabs
+        document.querySelectorAll('.admin-tab-content').forEach(tab => {
+            tab.classList.remove('active');
+        });
+        document.querySelectorAll('.admin-tab-btn').forEach(btn => {
+            btn.classList.remove('active');
+        });
+
+        // Activar tab seleccionado
+        const tabContent = document.getElementById(`tab-${tabName}`);
+        const tabBtn = document.querySelector(`[data-tab="${tabName}"]`);
+        
+        if (tabContent) {
+            tabContent.classList.add('active');
+        }
+        if (tabBtn) {
+            tabBtn.classList.add('active');
+        }
+
+        // Cargar datos específicos del tab
+        switch(tabName) {
+            case 'clients':
+                this.loadAdminClients();
+                break;
+            case 'drivers':
+                this.loadAdminDrivers();
+                break;
+            case 'units':
+                this.loadAdminUnits();
+                break;
+        }
+
+        console.log(`[Admin] Tab cambiado a: ${tabName}`);
+    }
+
+    /**
+     * Cargar clientes en admin dashboard
+     */
+    loadAdminClients() {
+        const clientsList = document.getElementById('clientsList');
+        
+        if (!clientsList) return;
+
+        const mockClients = [
+            { name: 'Andrés Rodríguez', email: 'andres@rsexpress.com', phone: '555-0101', deliveries: 5, status: 'active' },
+            { name: 'Juan García', email: 'juan@example.com', phone: '555-0102', deliveries: 12, status: 'active' },
+            { name: 'María López', email: 'maria@example.com', phone: '555-0103', deliveries: 8, status: 'inactive' }
+        ];
+
+        const html = mockClients.map(client => `
+            <div class="list-item">
+                <span>${client.name}</span>
+                <span>${client.email}</span>
+                <span>${client.phone}</span>
+                <span>${client.deliveries}</span>
+                <span><span class="status-badge ${client.status}">${client.status === 'active' ? 'Activo' : 'Inactivo'}</span></span>
+                <button class="item-action-btn" title="Ver perfil">
+                    <i class="fas fa-user"></i>
+                </button>
+            </div>
+        `).join('');
+
+        clientsList.innerHTML = html;
+    }
+
+    /**
+     * Cargar conductores en admin dashboard
+     */
+    loadAdminDrivers() {
+        const driversList = document.getElementById('driversList');
+        
+        if (!driversList) return;
+
+        const mockDrivers = [
+            { name: 'Fulgencio González', vehicle: 'Moto Honda', status: 'online', deliveries: 24, rating: '4.8★' },
+            { name: 'Carlos Rodríguez', vehicle: 'Moto Yamaha', status: 'online', deliveries: 18, rating: '4.6★' },
+            { name: 'Luis Martínez', vehicle: 'Moto Suzuki', status: 'offline', deliveries: 15, rating: '4.5★' }
+        ];
+
+        const html = mockDrivers.map(driver => `
+            <div class="list-item">
+                <span>${driver.name}</span>
+                <span>${driver.vehicle}</span>
+                <span><span class="status-badge ${driver.status === 'online' ? 'active' : 'inactive'}">${driver.status === 'online' ? 'En Línea' : 'Offline'}</span></span>
+                <span>${driver.deliveries}</span>
+                <span>${driver.rating}</span>
+                <button class="item-action-btn" title="Ver perfil">
+                    <i class="fas fa-user"></i>
+                </button>
+            </div>
+        `).join('');
+
+        driversList.innerHTML = html;
+    }
+
+    /**
+     * Cargar unidades en admin dashboard
+     */
+    loadAdminUnits() {
+        const unitsList = document.getElementById('unitsList');
+        
+        if (!unitsList) return;
+
+        const mockUnits = [
+            { id: 'MOT001', model: 'Honda CB500', driver: 'Fulgencio González', km: 12450, fuel: '85%', maintenance: 'OK' },
+            { id: 'MOT002', model: 'Yamaha YZF', driver: 'Carlos Rodríguez', km: 8920, fuel: '60%', maintenance: 'Revisión próxima' },
+            { id: 'MOT003', model: 'Suzuki GSX', driver: 'Luis Martínez', km: 15280, fuel: '40%', maintenance: 'Vencida' }
+        ];
+
+        const html = mockUnits.map(unit => `
+            <div class="list-item">
+                <span>${unit.id}</span>
+                <span>${unit.model}</span>
+                <span>${unit.driver}</span>
+                <span>${unit.km} km</span>
+                <span>${unit.fuel}</span>
+                <span><span class="status-badge ${unit.maintenance === 'OK' ? 'active' : 'pending'}">${unit.maintenance}</span></span>
+                <button class="item-action-btn" title="Ver detalles">
+                    <i class="fas fa-tools"></i>
+                </button>
+            </div>
+        `).join('');
+
+        unitsList.innerHTML = html;
+    }
+
+    /**
+     * Cargar página de usuarios Odoo
+     */
+    loadOdooUsersPage() {
+        console.log('[Odoo] Cargando página de usuarios...');
+        this.setupOdooUsersUI();
+    }
+
+    /**
+     * Setup UI para usuarios Odoo
+     */
+    setupOdooUsersUI() {
+        const btnSync = document.getElementById('btnSyncOdooUsers');
+        
+        btnSync?.addEventListener('click', () => {
+            this.syncOdooUsers();
+        });
+    }
+
+    /**
+     * Sincronizar usuarios desde Odoo 19
+     */
+    async syncOdooUsers() {
+        console.log('[Odoo] Iniciando sincronización...');
+        
+        const btnSync = document.getElementById('btnSyncOdooUsers');
+        const statusEl = document.getElementById('odooConnectionStatus');
+        const countEl = document.getElementById('odooUserCount');
+        const containerEl = document.getElementById('odooUsersContainer');
+
+        // Mostrar estado de sincronización
+        btnSync.disabled = true;
+        btnSync.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sincronizando...';
+        statusEl.textContent = '🟡 Sincronizando...';
+
+        try {
+            // Validar que odoo está disponible
+            if (!window.odoo) {
+                throw new Error('Odoo integration no disponible');
+            }
+
+            // Conectar a Odoo
+            const connected = await window.odoo.connect();
+            
+            if (!connected) {
+                throw new Error('No se pudo conectar a Odoo');
+            }
+
+            // Actualizar estado
+            statusEl.textContent = '🟢 Conectado';
+            countEl.textContent = window.odoo.users.length;
+
+            // Mostrar tabla de usuarios
+            const tableHtml = window.odoo.getUsersTable();
+            containerEl.innerHTML = tableHtml;
+
+            console.log('[Odoo] ✓ Sincronización completada');
+            this.showToast('Usuarios sincronizados correctamente', 'success');
+
+        } catch (error) {
+            console.error('[Odoo] ✗ Error:', error);
+            statusEl.textContent = '🔴 Error de conexión';
+            containerEl.innerHTML = `
+                <div style="text-align: center; padding: 2rem; color: var(--primary-color);">
+                    <i class="fas fa-exclamation-circle" style="font-size: 2rem; margin-bottom: 1rem; display: block;"></i>
+                    <p><strong>Error de conexión</strong></p>
+                    <p style="font-size: 0.9rem; margin-top: 0.5rem;">${error.message}</p>
+                    <p style="font-size: 0.85rem; margin-top: 1rem; color: var(--gray-light);">
+                        Verifica que resexpress.online esté disponible
+                    </p>
+                </div>
+            `;
+            this.showToast('Error sincronizando usuarios: ' + error.message, 'error');
+
+        } finally {
+            btnSync.disabled = false;
+            btnSync.innerHTML = '<i class="fas fa-sync-alt"></i> Sincronizar';
+        }
+    }
 }
 
 // Initialize app
 const app = new RSExpressApp();
+window.app = app;  // Hacer accesible desde consola
+
+console.log('[RSExpress] Aplicación inicializada. Acceso en window.app');
 
 // Service Worker for PWA (optional)
 if ('serviceWorker' in navigator) {

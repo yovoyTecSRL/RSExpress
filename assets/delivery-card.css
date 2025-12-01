@@ -1,0 +1,437 @@
+/**
+ * 📦 Delivery Card Component - RSExpress
+ * Componente visual para mostrar entregas con estado dinámico
+ */
+
+:root {
+    --delivery-primary: #ff6b35;
+    --delivery-secondary: #3498db;
+    --delivery-success: #27ae60;
+    --delivery-warning: #f39c12;
+    --delivery-danger: #e74c3c;
+    --delivery-pending: #95a5a6;
+    --delivery-dark: #2c3e50;
+    --delivery-light: #ecf0f1;
+    --delivery-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+/* ============================================
+   Delivery Card - Estilos Base
+   ============================================ */
+
+.delivery-card {
+    background: white;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: var(--delivery-shadow);
+    transition: all 0.3s ease;
+    border-left: 5px solid;
+    margin-bottom: 20px;
+    max-width: 500px;
+}
+
+.delivery-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+}
+
+/* Estados de entrega - Borde de color */
+.delivery-card.pending {
+    border-left-color: var(--delivery-pending);
+    background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+}
+
+.delivery-card.in-transit {
+    border-left-color: var(--delivery-warning);
+    background: linear-gradient(135deg, #ffffff 0%, #fff9f0 100%);
+}
+
+.delivery-card.completed {
+    border-left-color: var(--delivery-success);
+    background: linear-gradient(135deg, #ffffff 0%, #f0fdf4 100%);
+}
+
+.delivery-card.failed {
+    border-left-color: var(--delivery-danger);
+    background: linear-gradient(135deg, #ffffff 0%, #fdf0f0 100%);
+}
+
+/* ============================================
+   Card Header - Número y Estado
+   ============================================ */
+
+.delivery-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px;
+    background: linear-gradient(90deg, #f8f9fa 0%, #ffffff 100%);
+    border-bottom: 1px solid #e9ecef;
+}
+
+.delivery-number {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.delivery-number-badge {
+    background: var(--delivery-primary);
+    color: white;
+    width: 45px;
+    height: 45px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 18px;
+    box-shadow: 0 2px 8px rgba(255, 107, 53, 0.3);
+}
+
+.delivery-id {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--delivery-dark);
+}
+
+.delivery-status-badge {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* Estados - Badge */
+.delivery-status-badge.pending {
+    background: rgba(149, 165, 166, 0.15);
+    color: var(--delivery-pending);
+}
+
+.delivery-status-badge.pending::before {
+    content: "●";
+    display: inline-block;
+    margin-right: 6px;
+    animation: bulbPulse 2s infinite;
+}
+
+.delivery-status-badge.in-transit {
+    background: rgba(243, 156, 18, 0.15);
+    color: var(--delivery-warning);
+}
+
+.delivery-status-badge.in-transit::before {
+    content: "🚚";
+}
+
+.delivery-status-badge.completed {
+    background: rgba(39, 174, 96, 0.15);
+    color: var(--delivery-success);
+}
+
+.delivery-status-badge.completed::before {
+    content: "✓";
+}
+
+.delivery-status-badge.failed {
+    background: rgba(231, 76, 60, 0.15);
+    color: var(--delivery-danger);
+}
+
+.delivery-status-badge.failed::before {
+    content: "✕";
+}
+
+/* Animación de bulbo pulsante */
+@keyframes bulbPulse {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.4;
+    }
+}
+
+/* ============================================
+   Card Body - Información Principal
+   ============================================ */
+
+.delivery-body {
+    padding: 20px;
+}
+
+.delivery-item {
+    margin-bottom: 16px;
+    display: flex;
+    gap: 12px;
+}
+
+.delivery-item:last-child {
+    margin-bottom: 0;
+}
+
+.delivery-item-icon {
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    background: var(--delivery-light);
+    color: var(--delivery-primary);
+    font-size: 16px;
+    flex-shrink: 0;
+}
+
+.delivery-item-content {
+    flex-grow: 1;
+}
+
+.delivery-item-label {
+    font-size: 12px;
+    font-weight: 600;
+    color: #7f8c8d;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 4px;
+}
+
+.delivery-item-value {
+    font-size: 14px;
+    color: var(--delivery-dark);
+    font-weight: 500;
+}
+
+.delivery-item-value strong {
+    color: var(--delivery-primary);
+    font-weight: 700;
+}
+
+/* ============================================
+   Card Footer - Acciones
+   ============================================ */
+
+.delivery-footer {
+    padding: 16px 20px;
+    background: #f8f9fa;
+    border-top: 1px solid #e9ecef;
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+}
+
+.delivery-button {
+    padding: 8px 16px;
+    border: none;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.delivery-button.primary {
+    background: var(--delivery-primary);
+    color: white;
+}
+
+.delivery-button.primary:hover {
+    background: #e55a2b;
+    box-shadow: 0 4px 12px rgba(255, 107, 53, 0.3);
+}
+
+.delivery-button.secondary {
+    background: var(--delivery-light);
+    color: var(--delivery-dark);
+}
+
+.delivery-button.secondary:hover {
+    background: #d5dbdb;
+}
+
+/* ============================================
+   Card Grid Layout
+   ============================================ */
+
+.delivery-cards-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(500px, 1fr));
+    gap: 20px;
+    margin-top: 20px;
+}
+
+@media (max-width: 768px) {
+    .delivery-cards-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .delivery-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+    }
+    
+    .delivery-status-badge {
+        align-self: flex-end;
+    }
+}
+
+/* ============================================
+   Estilos Temáticos por Prioridad
+   ============================================ */
+
+.delivery-card.priority-high {
+    --priority-color: #e74c3c;
+}
+
+.delivery-card.priority-normal {
+    --priority-color: #f39c12;
+}
+
+.delivery-card.priority-low {
+    --priority-color: #27ae60;
+}
+
+.delivery-priority-indicator {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--priority-color, #f39c12);
+    margin-right: 8px;
+}
+
+/* ============================================
+   Animaciones y Efectos
+   ============================================ */
+
+.delivery-card {
+    animation: slideIn 0.5s ease-out;
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Efecto de carga */
+.delivery-card.loading {
+    opacity: 0.6;
+    pointer-events: none;
+}
+
+.delivery-card.loading::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+    animation: shimmer 2s infinite;
+}
+
+@keyframes shimmer {
+    0% {
+        transform: translateX(-100%);
+    }
+    100% {
+        transform: translateX(100%);
+    }
+}
+
+/* ============================================
+   Estilos Adicionales
+   ============================================ */
+
+.delivery-location-map {
+    width: 100%;
+    height: 200px;
+    border-radius: 8px;
+    margin: 16px 0;
+    background: #e9ecef;
+    border: 1px solid #d5dbdb;
+    overflow: hidden;
+}
+
+.delivery-notes {
+    background: #f8f9fa;
+    padding: 12px;
+    border-radius: 6px;
+    font-size: 12px;
+    color: #555;
+    border-left: 3px solid var(--delivery-primary);
+    margin-top: 12px;
+}
+
+.delivery-timeline {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 12px;
+}
+
+.timeline-item {
+    display: flex;
+    gap: 12px;
+    font-size: 12px;
+    color: #666;
+}
+
+.timeline-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: var(--delivery-primary);
+    margin-top: 4px;
+    flex-shrink: 0;
+}
+
+.timeline-item.completed .timeline-dot {
+    background: var(--delivery-success);
+}
+
+.timeline-item.pending .timeline-dot {
+    background: var(--delivery-pending);
+}
+
+/* Responsive para móvil */
+@media (max-width: 576px) {
+    .delivery-card {
+        border-left-width: 4px;
+    }
+    
+    .delivery-header,
+    .delivery-body {
+        padding: 16px;
+    }
+    
+    .delivery-number-badge {
+        width: 40px;
+        height: 40px;
+        font-size: 16px;
+    }
+    
+    .delivery-footer {
+        padding: 12px 16px;
+    }
+    
+    .delivery-button {
+        padding: 6px 12px;
+        font-size: 11px;
+    }
+}

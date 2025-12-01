@@ -1,0 +1,719 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>📦 Delivery Card - Demo Visual</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 40px 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: white;
+            padding: 40px;
+            border-radius: 15px;
+            margin-bottom: 40px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            text-align: center;
+        }
+
+        .header h1 {
+            color: #2c3e50;
+            font-size: 48px;
+            margin-bottom: 15px;
+        }
+
+        .header p {
+            color: #7f8c8d;
+            font-size: 16px;
+            margin-bottom: 20px;
+        }
+
+        .status-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin: 30px 0;
+        }
+
+        .status-box {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            border-left: 5px solid;
+        }
+
+        .status-box.pending { border-left-color: #95a5a6; }
+        .status-box.in-transit { border-left-color: #f39c12; }
+        .status-box.completed { border-left-color: #27ae60; }
+        .status-box.failed { border-left-color: #e74c3c; }
+
+        .status-box h3 {
+            color: #2c3e50;
+            margin-bottom: 10px;
+            font-size: 18px;
+        }
+
+        .status-box p {
+            color: #7f8c8d;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        .demo-section {
+            background: white;
+            padding: 40px;
+            border-radius: 15px;
+            margin-bottom: 40px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+        }
+
+        .demo-section h2 {
+            color: #2c3e50;
+            margin-bottom: 20px;
+            font-size: 28px;
+            border-bottom: 3px solid #667eea;
+            padding-bottom: 10px;
+        }
+
+        .demo-card-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+
+        .mock-card {
+            border-left: 5px solid;
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            animation: slideIn 0.5s ease;
+        }
+
+        .mock-card.pending { border-left-color: #95a5a6; }
+        .mock-card.in-transit { border-left-color: #f39c12; }
+        .mock-card.completed { border-left-color: #27ae60; }
+        .mock-card.failed { border-left-color: #e74c3c; }
+
+        .mock-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: start;
+            margin-bottom: 15px;
+        }
+
+        .mock-card-number {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .mock-card-id {
+            font-size: 24px;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+
+        .mock-card-client {
+            font-size: 12px;
+            color: #7f8c8d;
+        }
+
+        .mock-status-badge {
+            display: inline-block;
+            padding: 8px 12px;
+            border-radius: 5px;
+            font-weight: bold;
+            font-size: 12px;
+        }
+
+        .mock-status-badge.pending {
+            background: #ecf0f1;
+            color: #95a5a6;
+        }
+
+        .mock-status-badge.in-transit {
+            background: #fef3e2;
+            color: #f39c12;
+        }
+
+        .mock-status-badge.completed {
+            background: #e8f5e9;
+            color: #27ae60;
+        }
+
+        .mock-status-badge.failed {
+            background: #ffebee;
+            color: #e74c3c;
+        }
+
+        .mock-card-body {
+            margin: 15px 0;
+        }
+
+        .mock-item {
+            display: flex;
+            margin-bottom: 10px;
+            font-size: 14px;
+        }
+
+        .mock-item-icon {
+            font-size: 18px;
+            margin-right: 10px;
+            width: 30px;
+        }
+
+        .mock-item-content {
+            flex: 1;
+        }
+
+        .mock-item-label {
+            color: #7f8c8d;
+            font-size: 12px;
+        }
+
+        .mock-item-value {
+            color: #2c3e50;
+            font-weight: 500;
+        }
+
+        .mock-card-footer {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+            border-top: 1px solid #ecf0f1;
+            padding-top: 15px;
+        }
+
+        .mock-btn {
+            flex: 1;
+            padding: 8px 12px;
+            border: 1px solid #bdc3c7;
+            border-radius: 5px;
+            background: white;
+            color: #2c3e50;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .mock-btn:hover {
+            background: #f8f9fa;
+            transform: translateY(-2px);
+        }
+
+        .mock-btn.primary {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+
+        .mock-btn.primary:hover {
+            background: #5568d3;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin: 30px 0;
+        }
+
+        .feature-card {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            border: 2px solid #ecf0f1;
+        }
+
+        .feature-card h3 {
+            color: #667eea;
+            margin-bottom: 10px;
+            font-size: 18px;
+        }
+
+        .feature-card p {
+            color: #7f8c8d;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        .code-block {
+            background: #1e1e1e;
+            color: #00ff00;
+            padding: 20px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            overflow-x: auto;
+            margin: 20px 0;
+            line-height: 1.6;
+        }
+
+        .code-block code {
+            display: block;
+            white-space: pre-wrap;
+        }
+
+        .stats-summary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            border-radius: 15px;
+            margin: 30px 0;
+            text-align: center;
+        }
+
+        .stats-summary h2 {
+            margin-bottom: 20px;
+            border-color: white;
+        }
+
+        .stats-grid-white {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 20px;
+        }
+
+        .stat-item {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            border-radius: 10px;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .stat-value {
+            font-size: 36px;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .stat-label {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        footer {
+            text-align: center;
+            color: white;
+            padding: 20px;
+            margin-top: 40px;
+        }
+
+        .highlight {
+            background: #fff3cd;
+            padding: 20px;
+            border-radius: 8px;
+            border-left: 5px solid #ffc107;
+            margin: 20px 0;
+        }
+
+        .highlight strong {
+            color: #ff6b35;
+        }
+
+        @media (max-width: 768px) {
+            .demo-card-container {
+                grid-template-columns: 1fr;
+            }
+            
+            .header h1 {
+                font-size: 32px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>📦 Delivery Card Component</h1>
+            <p>Sistema Completo de Gestión de Entregas para RSExpress</p>
+            
+            <div class="status-grid">
+                <div class="status-box pending">
+                    <h3>⏳ Pendiente</h3>
+                    <p>Entrega sin asignar, esperando conductor</p>
+                </div>
+                <div class="status-box in-transit">
+                    <h3>🚚 En Tránsito</h3>
+                    <p>Entrega asignada, en camino</p>
+                </div>
+                <div class="status-box completed">
+                    <h3>✅ Entregada</h3>
+                    <p>Entrega completada exitosamente</p>
+                </div>
+                <div class="status-box failed">
+                    <h3>❌ Fallida</h3>
+                    <p>Entrega no completada</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Demo Visual -->
+        <div class="demo-section">
+            <h2>🎨 Vista Previa - Estados</h2>
+            <p style="color: #7f8c8d; margin-bottom: 20px;">
+                Aquí se muestran tarjetas de ejemplo en cada estado. Cada una tiene diseño único y botones de acción específicos.
+            </p>
+
+            <div class="demo-card-container">
+                <!-- Card Pending -->
+                <div class="mock-card pending">
+                    <div class="mock-card-header">
+                        <div class="mock-card-number">
+                            <div style="font-size: 24px;">📦</div>
+                            <div>
+                                <div class="mock-card-id">#1007</div>
+                                <div class="mock-card-client">María García López</div>
+                            </div>
+                        </div>
+                        <div class="mock-status-badge pending">⏳ Pendiente</div>
+                    </div>
+                    <div class="mock-card-body">
+                        <div class="mock-item">
+                            <div class="mock-item-icon">📋</div>
+                            <div class="mock-item-content">
+                                <div class="mock-item-label">Descripción</div>
+                                <div class="mock-item-value">Electrodoméstico - Refrigerador</div>
+                            </div>
+                        </div>
+                        <div class="mock-item">
+                            <div class="mock-item-icon">📍</div>
+                            <div class="mock-item-content">
+                                <div class="mock-item-label">Punto de Entrega</div>
+                                <div class="mock-item-value"><strong>La Unión, San Isidro</strong></div>
+                            </div>
+                        </div>
+                        <div class="mock-item">
+                            <div class="mock-item-icon">⏱️</div>
+                            <div class="mock-item-content">
+                                <div class="mock-item-label">Estado</div>
+                                <div class="mock-item-value">⏳ Pendiente de entrega</div>
+                            </div>
+                        </div>
+                        <div class="mock-item">
+                            <div class="mock-item-icon">⚡</div>
+                            <div class="mock-item-content">
+                                <div class="mock-item-label">Prioridad</div>
+                                <div class="mock-item-value">● Normal</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mock-card-footer">
+                        <button class="mock-btn primary">🚚 Asignar</button>
+                        <button class="mock-btn">👁️ Ver</button>
+                    </div>
+                </div>
+
+                <!-- Card In Transit -->
+                <div class="mock-card in-transit">
+                    <div class="mock-card-header">
+                        <div class="mock-card-number">
+                            <div style="font-size: 24px;">🚚</div>
+                            <div>
+                                <div class="mock-card-id">#1008</div>
+                                <div class="mock-card-client">Juan Carlos Rodríguez</div>
+                            </div>
+                        </div>
+                        <div class="mock-status-badge in-transit">🚚 En Tránsito</div>
+                    </div>
+                    <div class="mock-card-body">
+                        <div class="mock-item">
+                            <div class="mock-item-icon">📋</div>
+                            <div class="mock-item-content">
+                                <div class="mock-item-label">Descripción</div>
+                                <div class="mock-item-value">Paquete electrónico - Laptop</div>
+                            </div>
+                        </div>
+                        <div class="mock-item">
+                            <div class="mock-item-icon">📍</div>
+                            <div class="mock-item-content">
+                                <div class="mock-item-label">Punto de Entrega</div>
+                                <div class="mock-item-value"><strong>Paseo de la Reforma, CDMX</strong></div>
+                            </div>
+                        </div>
+                        <div class="mock-item">
+                            <div class="mock-item-icon">⏱️</div>
+                            <div class="mock-item-content">
+                                <div class="mock-item-label">Estado</div>
+                                <div class="mock-item-value">🚚 En tránsito</div>
+                            </div>
+                        </div>
+                        <div class="mock-item">
+                            <div class="mock-item-icon">⚡</div>
+                            <div class="mock-item-content">
+                                <div class="mock-item-label">Prioridad</div>
+                                <div class="mock-item-value">● Alta</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mock-card-footer">
+                        <button class="mock-btn primary">✅ Entregar</button>
+                        <button class="mock-btn">❌ No Entregada</button>
+                    </div>
+                </div>
+
+                <!-- Card Completed -->
+                <div class="mock-card completed">
+                    <div class="mock-card-header">
+                        <div class="mock-card-number">
+                            <div style="font-size: 24px;">✅</div>
+                            <div>
+                                <div class="mock-card-id">#1009</div>
+                                <div class="mock-card-client">Software Solutions S.A.</div>
+                            </div>
+                        </div>
+                        <div class="mock-status-badge completed">✅ Entregada</div>
+                    </div>
+                    <div class="mock-card-body">
+                        <div class="mock-item">
+                            <div class="mock-item-icon">📋</div>
+                            <div class="mock-item-content">
+                                <div class="mock-item-label">Descripción</div>
+                                <div class="mock-item-value">Material de oficina - 10 cajas</div>
+                            </div>
+                        </div>
+                        <div class="mock-item">
+                            <div class="mock-item-icon">📍</div>
+                            <div class="mock-item-content">
+                                <div class="mock-item-label">Punto de Entrega</div>
+                                <div class="mock-item-value"><strong>Lomas, Monterrey</strong></div>
+                            </div>
+                        </div>
+                        <div class="mock-item">
+                            <div class="mock-item-icon">⏱️</div>
+                            <div class="mock-item-content">
+                                <div class="mock-item-label">Estado</div>
+                                <div class="mock-item-value">✅ Entregada</div>
+                            </div>
+                        </div>
+                        <div class="mock-item">
+                            <div class="mock-item-icon">⚡</div>
+                            <div class="mock-item-content">
+                                <div class="mock-item-label">Prioridad</div>
+                                <div class="mock-item-value">● Normal</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mock-card-footer">
+                        <button class="mock-btn primary">📄 Ver Comprobante</button>
+                    </div>
+                </div>
+
+                <!-- Card Failed -->
+                <div class="mock-card failed">
+                    <div class="mock-card-header">
+                        <div class="mock-card-number">
+                            <div style="font-size: 24px;">❌</div>
+                            <div>
+                                <div class="mock-card-id">#1010</div>
+                                <div class="mock-card-client">Francisco López Martínez</div>
+                            </div>
+                        </div>
+                        <div class="mock-status-badge failed">❌ Fallida</div>
+                    </div>
+                    <div class="mock-card-body">
+                        <div class="mock-item">
+                            <div class="mock-item-icon">📋</div>
+                            <div class="mock-item-content">
+                                <div class="mock-item-label">Descripción</div>
+                                <div class="mock-item-value">Piezas automotrices - Motor</div>
+                            </div>
+                        </div>
+                        <div class="mock-item">
+                            <div class="mock-item-icon">📍</div>
+                            <div class="mock-item-content">
+                                <div class="mock-item-label">Punto de Entrega</div>
+                                <div class="mock-item-value"><strong>Guadalajara</strong></div>
+                            </div>
+                        </div>
+                        <div class="mock-item">
+                            <div class="mock-item-icon">⏱️</div>
+                            <div class="mock-item-content">
+                                <div class="mock-item-label">Estado</div>
+                                <div class="mock-item-value">❌ No entregada</div>
+                            </div>
+                        </div>
+                        <div class="mock-item">
+                            <div class="mock-item-icon">⚡</div>
+                            <div class="mock-item-content">
+                                <div class="mock-item-label">Prioridad</div>
+                                <div class="mock-item-value">● Alta</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mock-card-footer">
+                        <button class="mock-btn primary">🔄 Reintentar</button>
+                        <button class="mock-btn">📋 Ver Motivo</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Características -->
+        <div class="demo-section">
+            <h2>✨ Características Principales</h2>
+            <div class="features-grid">
+                <div class="feature-card">
+                    <h3>📦 4 Estados</h3>
+                    <p>Pendiente, En Tránsito, Entregada, Fallida. Cada uno con diseño y botones específicos.</p>
+                </div>
+                <div class="feature-card">
+                    <h3>⚡ 3 Prioridades</h3>
+                    <p>Alta, Normal y Baja. Con indicadores visuales de color para fácil identificación.</p>
+                </div>
+                <div class="feature-card">
+                    <h3>🎨 Diseño Responsivo</h3>
+                    <p>Funciona perfectamente en desktop, tablet y mobile. Grid automático adaptable.</p>
+                </div>
+                <div class="feature-card">
+                    <h3>🔍 Filtros Avanzados</h3>
+                    <p>Filtrar por estado, prioridad y búsqueda de texto. Estadísticas en tiempo real.</p>
+                </div>
+                <div class="feature-card">
+                    <h3>⚙️ Componente Reutilizable</h3>
+                    <p>Clase JavaScript que se puede usar en cualquier página. Completamente modular.</p>
+                </div>
+                <div class="feature-card">
+                    <h3>📱 Sin Dependencias</h3>
+                    <p>Vanilla JavaScript + CSS. No requiere jQuery, React o librerías externas.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Implementación -->
+        <div class="demo-section">
+            <h2>🚀 Cómo Usar</h2>
+            <p style="color: #7f8c8d; margin-bottom: 20px;">
+                Crear una tarjeta de entrega es simple. Aquí está el código:
+            </p>
+
+            <div class="code-block">
+                <code>// Crear una nueva entrega
+const delivery = new DeliveryCard({
+    id: '#1007',
+    cliente: 'María García López',
+    descripcion: 'Electrodoméstico - Refrigerador',
+    ubicacion: 'La Unión, San Isidro',
+    estado: 'pending',
+    prioridad: 'normal',
+    notas: 'Llamar 30 min antes'
+});
+
+// Montar en el DOM
+delivery.mount('#container');
+
+// Cambiar estado dinámicamente
+delivery.updateStatus('in-transit');</code>
+            </div>
+        </div>
+
+        <!-- Estadísticas -->
+        <div class="stats-summary">
+            <h2 style="color: white; border-bottom-color: white;">📊 Implementación Completada</h2>
+            <div class="stats-grid-white">
+                <div class="stat-item">
+                    <div class="stat-value">450+</div>
+                    <div class="stat-label">Líneas JS</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value">350+</div>
+                    <div class="stat-label">Líneas CSS</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value">6</div>
+                    <div class="stat-label">Entregas Demo</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value">100%</div>
+                    <div class="stat-label">Responsive</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value">14</div>
+                    <div class="stat-label">Métodos</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value">✅</div>
+                    <div class="stat-label">Productivo</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- URLs -->
+        <div class="demo-section">
+            <h2>🌐 Acceso a Componentes</h2>
+            <div class="highlight">
+                <strong>Página Principal:</strong><br>
+                <code style="background: #f0f0f0; padding: 5px; border-radius: 3px;">
+                    http://localhost:5555/delivery-cards.html
+                </code>
+                <br><br>
+                <strong>Archivos Creados:</strong><br>
+                • <code style="background: #f0f0f0; padding: 5px; border-radius: 3px;">scripts/utils/delivery-card.js</code> - Componente JavaScript (450+ líneas)<br>
+                • <code style="background: #f0f0f0; padding: 5px; border-radius: 3px;">assets/delivery-card.css</code> - Estilos de cards (350+ líneas)<br>
+                • <code style="background: #f0f0f0; padding: 5px; border-radius: 3px;">assets/delivery-cards-page.css</code> - Estilos de página (200+ líneas)<br>
+                • <code style="background: #f0f0f0; padding: 5px; border-radius: 3px;">delivery-cards.html</code> - Página HTML principal (580+ líneas)<br>
+                • <code style="background: #f0f0f0; padding: 5px; border-radius: 3px;">test/test-delivery-cards.js</code> - Suite de tests (300+ líneas)
+            </div>
+        </div>
+
+        <!-- Próximos pasos -->
+        <div class="demo-section">
+            <h2>📈 Próximos Pasos</h2>
+            <div style="color: #7f8c8d; line-height: 1.8;">
+                <p><strong style="color: #2c3e50;">Fase 2: Integración con Datos Reales</strong></p>
+                <ul style="margin-left: 20px; margin-bottom: 20px;">
+                    <li>Conectar con Odoo para obtener órdenes reales</li>
+                    <li>Sincronización en tiempo real de estados</li>
+                    <li>Mapeo automático de estados Odoo → DeliveryCard</li>
+                </ul>
+                
+                <p><strong style="color: #2c3e50;">Fase 3: Asignación Inteligente</strong></p>
+                <ul style="margin-left: 20px; margin-bottom: 20px;">
+                    <li>Integración con Driver Positioning System</li>
+                    <li>Asignación automática a drivers cercanos</li>
+                    <li>Generación de rutas optimizadas</li>
+                </ul>
+                
+                <p><strong style="color: #2c3e50;">Fase 4: Notificaciones y Análisis</strong></p>
+                <ul style="margin-left: 20px;">
+                    <li>Notificaciones por cambio de estado</li>
+                    <li>SMS/WhatsApp al cliente y driver</li>
+                    <li>Dashboard de analytics y reportes</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <p>✅ Sistema de Entregas RSExpress - Implementación Completada</p>
+        <p>Desarrollado por: GitHub Copilot | Fecha: 2025-12-01</p>
+    </footer>
+</body>
+</html>

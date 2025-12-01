@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Entregas - RSExpress</title>
+    <link rel="stylesheet" href="/assets/delivery-card.css">
+    <link rel="stylesheet" href="/assets/delivery-cards-page.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>📦 Sistema de Entregas</h1>
+            <p>Gestión centralizada de entregas y envíos</p>
+
+            <!-- Estadísticas -->
+            <div class="stats">
+                <div class="stat">
+                    <div class="stat-value" id="stat-total">0</div>
+                    <div class="stat-label">Total</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-value" id="stat-pending">0</div>
+                    <div class="stat-label">Pendientes</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-value" id="stat-transit">0</div>
+                    <div class="stat-label">En Tránsito</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-value" id="stat-completed">0</div>
+                    <div class="stat-label">Entregadas</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-value" id="stat-failed">0</div>
+                    <div class="stat-label">Fallidas</div>
+                </div>
+            </div>
+
+            <!-- Controles -->
+            <div class="controls">
+                <button class="btn btn-primary" onclick="addNewDelivery()">
+                    ➕ Nueva Entrega
+                </button>
+                <button class="btn btn-secondary" onclick="refreshDeliveries()">
+                    🔄 Actualizar
+                </button>
+                <button class="btn btn-secondary" onclick="generateTestData()">
+                    📊 Cargar Ejemplos
+                </button>
+            </div>
+        </div>
+
+        <!-- Filtros -->
+        <div class="filter-section">
+            <div class="filter-group">
+                <label>Estado:</label>
+                <select id="filterState" onchange="applyFilters()">
+                    <option value="">Todos</option>
+                    <option value="pending">Pendiente</option>
+                    <option value="in-transit">En Tránsito</option>
+                    <option value="completed">Entregadas</option>
+                    <option value="failed">Fallidas</option>
+                </select>
+            </div>
+
+            <div class="filter-group">
+                <label>Prioridad:</label>
+                <select id="filterPriority" onchange="applyFilters()">
+                    <option value="">Todas</option>
+                    <option value="high">Alta</option>
+                    <option value="normal">Normal</option>
+                    <option value="low">Baja</option>
+                </select>
+            </div>
+
+            <div class="filter-group">
+                <label>Buscar:</label>
+                <input type="text" id="filterSearch" placeholder="ID, Cliente, Ubicación..." onkeyup="applyFilters()">
+            </div>
+        </div>
+
+        <!-- Grid de Entregas -->
+        <div class="delivery-grid" id="deliveryGrid">
+            <div class="empty-state">
+                <div class="empty-state-icon">📦</div>
+                <h2>No hay entregas</h2>
+                <p>Carga entregas de ejemplo o crea una nueva</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para nueva entrega -->
+    <div class="modal" id="deliveryModal">
+        <div class="modal-content">
+            <span class="modal-close" onclick="closeModal()">&times;</span>
+            <h2>➕ Nueva Entrega</h2>
+            <form onsubmit="saveNewDelivery(event)">
+                <div style="margin: 15px 0;">
+                    <label>ID Entrega:</label>
+                    <input type="text" id="newId" placeholder="#1008" required style="width: 100%; padding: 8px; margin-top: 5px; border: 1px solid #bdc3c7; border-radius: 5px;">
+                </div>
+                <div style="margin: 15px 0;">
+                    <label>Cliente:</label>
+                    <input type="text" id="newCliente" placeholder="Nombre del cliente" required style="width: 100%; padding: 8px; margin-top: 5px; border: 1px solid #bdc3c7; border-radius: 5px;">
+                </div>
+                <div style="margin: 15px 0;">
+                    <label>Descripción:</label>
+                    <input type="text" id="newDescripcion" placeholder="Descripción del pedido" required style="width: 100%; padding: 8px; margin-top: 5px; border: 1px solid #bdc3c7; border-radius: 5px;">
+                </div>
+                <div style="margin: 15px 0;">
+                    <label>Ubicación:</label>
+                    <input type="text" id="newUbicacion" placeholder="Dirección de entrega" required style="width: 100%; padding: 8px; margin-top: 5px; border: 1px solid #bdc3c7; border-radius: 5px;">
+                </div>
+                <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 20px;">
+                    ✅ Crear Entrega
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="/scripts/utils/delivery-card.js"></script>
+    <script>
+        let deliveries = [];
+        let filteredDeliveries = [];
+
+        /**
+         * Genera datos de ejemplo
+         */
+        function generateTestData() {
+            deliveries = [
+                {
+                    id: '#1007',
+                    cliente: 'María García López',
+                    descripcion: 'Electrodoméstico - Refrigerador Samsung 550L',
+                    ubicacion: 'La Unión, San Isidro',
+                    estado: 'pending',
+                    prioridad: 'normal',
+                    notas: 'Llamar 30 min antes de llegar',
+                    timeline: [
+                        { label: 'Orden creada', time: '10:30 AM', completed: true },
+                        { label: 'En almacén', time: '11:00 AM', completed: true },
+                        { label: 'Asignada a conductor', time: 'Pendiente', completed: false },
+                        { label: 'Entregada', time: 'Pendiente', completed: false }
+                    ]
+                },
+                {
+                    id: '#1008',
+                    cliente: 'Juan Carlos Rodríguez',
+                    descripcion: 'Paquete electrónico - Laptop',
+                    ubicacion: 'Paseo de la Reforma, CDMX',
+                    estado: 'in-transit',
+                    prioridad: 'high',
+                    notas: 'Requiere firma del cliente'
+                },
+                {
+                    id: '#1009',
+                    cliente: 'Software Solutions S.A.',
+                    descripcion: 'Material de oficina - 10 cajas',
+                    ubicacion: 'Avenida Paseo Lomas, Monterrey',
+                    estado: 'completed',
+                    prioridad: 'normal',
+                    timeline: [
+                        { label: 'Orden creada', time: '08:00 AM', completed: true },
+                        { label: 'En almacén', time: '08:30 AM', completed: true },
+                        { label: 'Asignada a conductor', time: '09:00 AM', completed: true },
+                        { label: 'Entregada', time: '14:30 PM', completed: true }
+                    ]
+                },
+                {
+                    id: '#1010',
+                    cliente: 'Francisco López Martínez',
+                    descripcion: 'Piezas automotrices - Motor parcial',
+                    ubicacion: 'Colonia Industrial, Guadalajara',
+                    estado: 'failed',
+                    prioridad: 'high',
+                    notas: 'Cliente no estaba disponible - Reintentar mañana'
+                },
+                {
+                    id: '#1011',
+                    cliente: 'Comercial Express Ltd.',
+                    descripcion: 'Insumos de embalaje',
+                    ubicacion: 'Puerto de Veracruz',
+                    estado: 'in-transit',
+                    prioridad: 'low',
+                },
+                {
+                    id: '#1012',
+                    cliente: 'Elena Fernández García',
+                    descripcion: 'Medicinas y suplementos',
+                    ubicacion: 'Coyoacán, CDMX',
+                    estado: 'pending',
+                    prioridad: 'high',
+                    notas: 'Entregar antes de las 6 PM'
+                }
+            ];
+
+            renderDeliveries();
+            updateStats();
+        }
+
+        /**
+         * Renderiza las entregas
+         */
+        function renderDeliveries() {
+            const grid = document.getElementById('deliveryGrid');
+            
+            if (filteredDeliveries.length === 0) {
+                grid.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">📦</div>
+                        <h2>No hay entregas</h2>
+                        <p>No hay entregas que coincidan con los filtros seleccionados</p>
+                    </div>
+                `;
+                return;
+            }
+
+            grid.innerHTML = '';
+            filteredDeliveries.forEach(delivery => {
+                const card = new DeliveryCard(delivery);
+                grid.appendChild(card.render());
+            });
+        }
+
+        /**
+         * Actualiza estadísticas
+         */
+        function updateStats() {
+            const stats = {
+                total: deliveries.length,
+                pending: deliveries.filter(d => d.estado === 'pending' || d.estado === 'pendiente').length,
+                transit: deliveries.filter(d => d.estado === 'in-transit' || d.estado === 'en-transito').length,
+                completed: deliveries.filter(d => d.estado === 'completed' || d.estado === 'entregada').length,
+                failed: deliveries.filter(d => d.estado === 'failed' || d.estado === 'fallida').length
+            };
+
+            document.getElementById('stat-total').textContent = stats.total;
+            document.getElementById('stat-pending').textContent = stats.pending;
+            document.getElementById('stat-transit').textContent = stats.transit;
+            document.getElementById('stat-completed').textContent = stats.completed;
+            document.getElementById('stat-failed').textContent = stats.failed;
+        }
+
+        /**
+         * Aplica filtros
+         */
+        function applyFilters() {
+            const filterState = document.getElementById('filterState').value;
+            const filterPriority = document.getElementById('filterPriority').value;
+            const filterSearch = document.getElementById('filterSearch').value.toLowerCase();
+
+            filteredDeliveries = deliveries.filter(delivery => {
+                const stateMatch = !filterState || delivery.estado === filterState || 
+                    (filterState === 'pending' && (delivery.estado === 'pending' || delivery.estado === 'pendiente')) ||
+                    (filterState === 'in-transit' && (delivery.estado === 'in-transit' || delivery.estado === 'en-transito')) ||
+                    (filterState === 'completed' && (delivery.estado === 'completed' || delivery.estado === 'entregada')) ||
+                    (filterState === 'failed' && (delivery.estado === 'failed' || delivery.estado === 'fallida'));
+
+                const priorityMatch = !filterPriority || delivery.prioridad === filterPriority ||
+                    (filterPriority === 'high' && delivery.prioridad === 'alta') ||
+                    (filterPriority === 'low' && delivery.prioridad === 'baja');
+
+                const searchMatch = !filterSearch || 
+                    delivery.id.toLowerCase().includes(filterSearch) ||
+                    delivery.cliente.toLowerCase().includes(filterSearch) ||
+                    delivery.ubicacion.toLowerCase().includes(filterSearch) ||
+                    delivery.descripcion.toLowerCase().includes(filterSearch);
+
+                return stateMatch && priorityMatch && searchMatch;
+            });
+
+            renderDeliveries();
+        }
+
+        /**
+         * Abre modal para nueva entrega
+         */
+        function addNewDelivery() {
+            document.getElementById('deliveryModal').classList.add('active');
+        }
+
+        /**
+         * Cierra modal
+         */
+        function closeModal() {
+            document.getElementById('deliveryModal').classList.remove('active');
+        }
+
+        /**
+         * Guarda nueva entrega
+         */
+        function saveNewDelivery(event) {
+            event.preventDefault();
+            
+            const newDelivery = {
+                id: document.getElementById('newId').value,
+                cliente: document.getElementById('newCliente').value,
+                descripcion: document.getElementById('newDescripcion').value,
+                ubicacion: document.getElementById('newUbicacion').value,
+                estado: 'pending',
+                prioridad: 'normal'
+            };
+
+            deliveries.push(newDelivery);
+            filteredDeliveries = deliveries;
+            renderDeliveries();
+            updateStats();
+            closeModal();
+
+            // Limpiar formulario
+            event.target.reset();
+
+            console.log('✅ Nueva entrega agregada:', newDelivery);
+        }
+
+        /**
+         * Actualiza entregas
+         */
+        function refreshDeliveries() {
+            console.log('🔄 Actualizando entregas...');
+            applyFilters();
+            alert('✅ Entregas actualizadas');
+        }
+
+        // Inicializar con datos de ejemplo
+        window.addEventListener('DOMContentLoaded', () => {
+            generateTestData();
+        });
+    </script>
+</body>
+</html>

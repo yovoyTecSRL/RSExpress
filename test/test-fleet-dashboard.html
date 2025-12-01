@@ -1,0 +1,619 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🚗 Test Fleet Dashboard - RSExpress</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            color: #2c3e50;
+            margin-bottom: 10px;
+            font-size: 32px;
+        }
+
+        .header p {
+            color: #7f8c8d;
+            font-size: 16px;
+        }
+
+        .test-section {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+
+        .test-section h2 {
+            color: #3498db;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .buttons {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .btn {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: #3498db;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #2980b9;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(52, 152, 219, 0.4);
+        }
+
+        .btn-success {
+            background: #27ae60;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #229954;
+            transform: translateY(-2px);
+        }
+
+        .btn-warning {
+            background: #f39c12;
+            color: white;
+        }
+
+        .btn-warning:hover {
+            background: #d68910;
+        }
+
+        .btn-danger {
+            background: #e74c3c;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #c0392b;
+        }
+
+        .info-box {
+            background: #ecf0f1;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid #3498db;
+            margin-bottom: 15px;
+        }
+
+        .info-box strong {
+            color: #2c3e50;
+        }
+
+        .console {
+            background: #1e1e1e;
+            color: #00ff00;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            max-height: 300px;
+            overflow-y: auto;
+            margin-top: 15px;
+        }
+
+        .console-line {
+            padding: 2px 0;
+            border-bottom: 1px solid #333;
+        }
+
+        .console-success {
+            color: #00ff00;
+        }
+
+        .console-error {
+            color: #ff6b6b;
+        }
+
+        .console-warning {
+            color: #ffd700;
+        }
+
+        .console-info {
+            color: #87ceeb;
+        }
+
+        .map-container {
+            height: 600px;
+            border-radius: 8px;
+            overflow: hidden;
+            margin-top: 20px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        #testMap {
+            width: 100%;
+            height: 100%;
+        }
+
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+
+        .status-online {
+            background: #27ae60;
+        }
+
+        .status-offline {
+            background: #e74c3c;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .card {
+            background: #f9f9f9;
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #ecf0f1;
+        }
+
+        .card h3 {
+            color: #2c3e50;
+            margin-bottom: 10px;
+            font-size: 14px;
+        }
+
+        .card p {
+            color: #7f8c8d;
+            font-size: 13px;
+            line-height: 1.6;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- HEADER -->
+        <div class="header">
+            <h1>🚗 Panel de Control - Fleet Dashboard</h1>
+            <p>Prueba completa de visualización de flota en tiempo real</p>
+        </div>
+
+        <!-- TEST 1: INICIALIZACIÓN -->
+        <div class="test-section">
+            <h2><i class="fas fa-rocket"></i> 1. Inicialización</h2>
+            <div class="info-box">
+                <strong>ℹ️ Info:</strong> Verifica que todos los módulos estén cargados correctamente
+            </div>
+            <div class="buttons">
+                <button class="btn btn-primary" onclick="testModulesLoaded()">
+                    <i class="fas fa-check"></i> Verificar Módulos
+                </button>
+                <button class="btn btn-primary" onclick="testMapInitialization()">
+                    <i class="fas fa-map"></i> Inicializar Mapa
+                </button>
+            </div>
+            <div class="console" id="console1"></div>
+        </div>
+
+        <!-- TEST 2: DATOS DE PRUEBA -->
+        <div class="test-section">
+            <h2><i class="fas fa-database"></i> 2. Crear Datos de Prueba</h2>
+            <div class="info-box">
+                <strong>ℹ️ Info:</strong> Crea conductores y entregas de prueba en el panel
+            </div>
+            <div class="buttons">
+                <button class="btn btn-success" onclick="testCreateFleetData()">
+                    <i class="fas fa-plus"></i> Crear Datos
+                </button>
+                <button class="btn btn-primary" onclick="testFleetReport()">
+                    <i class="fas fa-file"></i> Ver Reporte
+                </button>
+            </div>
+            <div class="console" id="console2"></div>
+        </div>
+
+        <!-- TEST 3: RENDERIZAR -->
+        <div class="test-section">
+            <h2><i class="fas fa-paint-brush"></i> 3. Renderizar en Mapa</h2>
+            <div class="info-box">
+                <strong>ℹ️ Info:</strong> Dibuja conductores y entregas en el mapa de Leaflet
+            </div>
+            <div class="buttons">
+                <button class="btn btn-success" onclick="testRenderFleet()">
+                    <i class="fas fa-eye"></i> Renderizar Flota
+                </button>
+                <button class="btn btn-warning" onclick="testClearMap()">
+                    <i class="fas fa-trash"></i> Limpiar Mapa
+                </button>
+            </div>
+            <div id="testMap"></div>
+            <div class="console" id="console3"></div>
+        </div>
+
+        <!-- TEST 4: OPERACIONES -->
+        <div class="test-section">
+            <h2><i class="fas fa-cogs"></i> 4. Operaciones en Tiempo Real</h2>
+            <div class="info-box">
+                <strong>ℹ️ Info:</strong> Realiza operaciones como actualizar posiciones o completar entregas
+            </div>
+            <div class="buttons">
+                <button class="btn btn-primary" onclick="testUpdateDriverPosition()">
+                    <i class="fas fa-location-arrow"></i> Actualizar Posición
+                </button>
+                <button class="btn btn-success" onclick="testCompleteDelivery()">
+                    <i class="fas fa-check-circle"></i> Completar Entrega
+                </button>
+                <button class="btn btn-warning" onclick="testSimulateMovement()">
+                    <i class="fas fa-walking"></i> Simular Movimiento
+                </button>
+            </div>
+            <div class="console" id="console4"></div>
+        </div>
+
+        <!-- TEST 5: DASHBOARD FULL -->
+        <div class="test-section">
+            <h2><i class="fas fa-dashboard"></i> 5. Dashboard Completo</h2>
+            <div class="info-box">
+                <strong>ℹ️ Info:</strong> Inicializa el dashboard visual completo
+            </div>
+            <div class="buttons">
+                <button class="btn btn-success" onclick="testFullDashboard()">
+                    <i class="fas fa-play"></i> Iniciar Dashboard
+                </button>
+                <button class="btn btn-primary" onclick="testFleetDashboardTest()">
+                    <i class="fas fa-play-circle"></i> Test Completo
+                </button>
+            </div>
+            <div class="console" id="console5"></div>
+        </div>
+
+        <!-- ESTADO DE MÓDULOS -->
+        <div class="test-section">
+            <h2><i class="fas fa-info-circle"></i> Estado de Módulos</h2>
+            <div class="grid" id="modulesStatus"></div>
+        </div>
+    </div>
+
+    <!-- Leaflet -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+
+    <!-- Scripts de la aplicación -->
+    <script src="route-optimizer.js"></script>
+    <script src="route-map-visualizer.js"></script>
+    <script src="driver-fleet-panel.js"></script>
+    <script src="fleet-dashboard.js"></script>
+
+    <script>
+        // Utilidades de consola
+        const consoles = {};
+
+        function addLog(consoleId, message, type = 'info') {
+            if (!consoles[consoleId]) {
+                consoles[consoleId] = [];
+            }
+
+            const timestamp = new Date().toLocaleTimeString('es-CR');
+            consoles[consoleId].push({ message, type, timestamp });
+
+            const consoleEl = document.getElementById(consoleId);
+            if (consoleEl) {
+                const line = document.createElement('div');
+                line.className = `console-line console-${type}`;
+                line.textContent = `[${timestamp}] ${message}`;
+                consoleEl.appendChild(line);
+                consoleEl.scrollTop = consoleEl.scrollHeight;
+
+                // Mantener solo los últimos 30 logs
+                while (consoleEl.children.length > 30) {
+                    consoleEl.removeChild(consoleEl.firstChild);
+                }
+            }
+        }
+
+        // TESTS
+        function testModulesLoaded() {
+            console.log('🔍 Verificando módulos...');
+            addLog('console1', '🔍 Verificando módulos...', 'info');
+
+            const modules = {
+                'RouteOptimizer': window.routeOptimizer,
+                'RouteMapVisualizer': window.routeMapVisualizer,
+                'DriverFleetPanel': window.driverFleetPanel,
+                'FleetDashboard': window.FleetDashboard,
+                'Leaflet': window.L
+            };
+
+            Object.entries(modules).forEach(([name, module]) => {
+                if (module) {
+                    addLog('console1', `✅ ${name} - CARGADO`, 'success');
+                } else {
+                    addLog('console1', `❌ ${name} - NO CARGADO`, 'error');
+                }
+            });
+
+            updateModulesStatus();
+        }
+
+        function testMapInitialization() {
+            addLog('console1', '🗺️ Inicializando mapa...', 'info');
+
+            try {
+                if (window.testMap) {
+                    addLog('console1', '⚠️ Mapa ya existe, omitiendo...', 'warning');
+                    return;
+                }
+
+                window.testMap = L.map('testMap').setView([9.9281, -84.0907], 13);
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    attribution: '© OpenStreetMap',
+                    maxZoom: 19
+                }).addTo(window.testMap);
+
+                addLog('console1', '✅ Mapa inicializado correctamente', 'success');
+
+                // Inicializar panel de flota con este mapa
+                if (window.driverFleetPanel && !window.driverFleetPanel.initialized) {
+                    window.driverFleetPanel.initWithMap(null, window.testMap);
+                    addLog('console1', '✅ Panel de flota conectado al mapa', 'success');
+                }
+            } catch (error) {
+                addLog('console1', `❌ Error: ${error.message}`, 'error');
+            }
+        }
+
+        function testCreateFleetData() {
+            addLog('console2', '📋 Creando datos de prueba...', 'info');
+
+            if (!window.driverFleetPanel) {
+                addLog('console2', '❌ Panel de flota no disponible', 'error');
+                return;
+            }
+
+            try {
+                // Limpiar datos previos
+                window.driverFleetPanel.clear();
+                window.driverFleetPanel.drivers = [];
+                window.driverFleetPanel.deliveries = [];
+
+                const drivers = [
+                    { id: 1, name: 'Carlos Ramírez', status: 'activo', lat: 9.9281, lon: -84.0907, completedDeliveries: 12, totalDistance: 87.5, efficiency: 94 },
+                    { id: 2, name: 'María González', status: 'activo', lat: 9.9350, lon: -84.0850, completedDeliveries: 18, totalDistance: 125.3, efficiency: 97 },
+                    { id: 3, name: 'Juan Pérez', status: 'disponible', lat: 9.9200, lon: -84.0950, completedDeliveries: 7, totalDistance: 45.2, efficiency: 89 }
+                ];
+
+                const deliveries = [
+                    { id: 1001, address: 'Av. Central 100', client: 'Cliente A', lat: 9.9300, lon: -84.0850, status: 'pendiente', priority: 'urgente', driverId: 1, attempts: 0 },
+                    { id: 1002, address: 'Calle 5, Barrio Amón', client: 'Cliente B', lat: 9.9250, lon: -84.0900, status: 'pendiente', priority: 'alta', driverId: 2, attempts: 0 },
+                    { id: 1003, address: 'Paseo Colón', client: 'Cliente C', lat: 9.9400, lon: -84.0950, status: 'pendiente', priority: 'normal', driverId: 2, attempts: 0 },
+                    { id: 1004, address: 'Rohrmoser', client: 'Cliente D', lat: 9.9150, lon: -84.0800, status: 'pendiente', priority: 'normal', driverId: 3, attempts: 0 }
+                ];
+
+                drivers.forEach(driver => window.driverFleetPanel.addDriver(driver));
+                deliveries.forEach(delivery => window.driverFleetPanel.addDelivery(delivery));
+
+                addLog('console2', `✅ ${drivers.length} conductores agregados`, 'success');
+                addLog('console2', `✅ ${deliveries.length} entregas agregadas`, 'success');
+
+            } catch (error) {
+                addLog('console2', `❌ Error: ${error.message}`, 'error');
+            }
+        }
+
+        function testFleetReport() {
+            if (window.driverFleetPanel) {
+                const report = window.driverFleetPanel.generateFleetReport();
+                addLog('console2', `📊 Conductores: ${report.summary.totalDrivers}`, 'info');
+                addLog('console2', `📦 Entregas pendientes: ${report.summary.pendingDeliveries}`, 'info');
+                addLog('console2', `✅ Entregas completadas: ${report.summary.completedDeliveries}`, 'success');
+                addLog('console2', `⚡ Tasa completación: ${report.summary.completionRate}%`, 'info');
+            }
+        }
+
+        function testRenderFleet() {
+            addLog('console3', '🎨 Renderizando flota...', 'info');
+
+            if (!window.testMap) {
+                addLog('console3', 'ℹ️ Inicializando mapa primero...', 'warning');
+                testMapInitialization();
+            }
+
+            if (window.driverFleetPanel && window.testMap) {
+                window.driverFleetPanel.render();
+                addLog('console3', '✅ Flota renderizada en mapa', 'success');
+            } else {
+                addLog('console3', '❌ Error: Mapa o panel no disponible', 'error');
+            }
+        }
+
+        function testClearMap() {
+            if (window.driverFleetPanel) {
+                window.driverFleetPanel.clear();
+                addLog('console3', '🗑️ Mapa limpiado', 'warning');
+            }
+        }
+
+        function testUpdateDriverPosition() {
+            addLog('console4', '📍 Actualizando posición del conductor 1...', 'info');
+
+            if (window.driverFleetPanel) {
+                // Nueva posición cercana (movimiento pequeño)
+                const newLat = 9.9281 + (Math.random() - 0.5) * 0.01;
+                const newLon = -84.0907 + (Math.random() - 0.5) * 0.01;
+
+                window.driverFleetPanel.updateDriverPosition(1, newLat, newLon);
+                addLog('console4', `✅ Conductor 1 movido a ${newLat.toFixed(4)}, ${newLon.toFixed(4)}`, 'success');
+
+                if (window.testMap) {
+                    window.driverFleetPanel.render();
+                }
+            }
+        }
+
+        function testCompleteDelivery() {
+            addLog('console4', '✅ Completando entrega 1001 por conductor 1...', 'info');
+
+            if (window.driverFleetPanel) {
+                window.driverFleetPanel.completeDelivery(1001, 1);
+                addLog('console4', '✅ Entrega completada', 'success');
+
+                if (window.testMap) {
+                    window.driverFleetPanel.render();
+                }
+            }
+        }
+
+        function testSimulateMovement() {
+            addLog('console4', '🚗 Simulando movimiento de conductores...', 'info');
+
+            if (!window.driverFleetPanel) return;
+
+            let count = 0;
+            const interval = setInterval(() => {
+                if (count >= 5) {
+                    clearInterval(interval);
+                    addLog('console4', '✅ Simulación completada', 'success');
+                    return;
+                }
+
+                // Mover todos los conductores
+                for (let i = 1; i <= 3; i++) {
+                    const newLat = 9.9281 + (Math.random() - 0.5) * 0.02;
+                    const newLon = -84.0907 + (Math.random() - 0.5) * 0.02;
+                    window.driverFleetPanel.updateDriverPosition(i, newLat, newLon);
+                }
+
+                if (window.testMap) {
+                    window.driverFleetPanel.render();
+                }
+
+                addLog('console4', `🔄 Paso ${count + 1}/5 completado`, 'info');
+                count++;
+            }, 1000);
+        }
+
+        function testFullDashboard() {
+            addLog('console5', '📊 Inicializando dashboard completo...', 'info');
+
+            // Primero inicializar mapa si no existe
+            if (!window.testMap) {
+                testMapInitialization();
+                setTimeout(() => {
+                    testCreateFleetData();
+                    setTimeout(() => {
+                        testRenderFleet();
+                        addLog('console5', '✅ Dashboard completo listo', 'success');
+                    }, 500);
+                }, 500);
+            } else {
+                testCreateFleetData();
+                testRenderFleet();
+                addLog('console5', '✅ Dashboard completo listo', 'success');
+            }
+        }
+
+        function testFleetDashboardTest() {
+            addLog('console5', '🎯 Ejecutando test completo...', 'info');
+
+            // Ejecutar todos los tests en secuencia
+            setTimeout(() => {
+                testModulesLoaded();
+                setTimeout(() => {
+                    testMapInitialization();
+                    setTimeout(() => {
+                        testCreateFleetData();
+                        setTimeout(() => {
+                            testFleetReport();
+                            setTimeout(() => {
+                                testRenderFleet();
+                                addLog('console5', '✅ TEST COMPLETO EXITOSO', 'success');
+                            }, 1000);
+                        }, 500);
+                    }, 500);
+                }, 500);
+            }, 500);
+        }
+
+        function updateModulesStatus() {
+            const container = document.getElementById('modulesStatus');
+            const modules = {
+                '🔧 RouteOptimizer': !!window.routeOptimizer,
+                '🗺️ RouteMapVisualizer': !!window.routeMapVisualizer,
+                '🚗 DriverFleetPanel': !!window.driverFleetPanel,
+                '📊 FleetDashboard': !!window.FleetDashboard,
+                '🗺️ Leaflet': !!window.L,
+                '🌐 Mapa Inicializado': !!window.testMap,
+                '👥 Datos de Flota': window.driverFleetPanel?.drivers?.length > 0,
+                '📦 Entregas': window.driverFleetPanel?.deliveries?.length > 0
+            };
+
+            container.innerHTML = Object.entries(modules).map(([name, status]) => `
+                <div class="card">
+                    <h3>
+                        <span class="status-indicator ${status ? 'status-online' : 'status-offline'}"></span>
+                        ${name}
+                    </h3>
+                    <p>${status ? '✅ ACTIVO' : '❌ INACTIVO'}</p>
+                </div>
+            `).join('');
+        }
+
+        // Inicializar al cargar
+        window.addEventListener('load', () => {
+            addLog('console1', '🚀 Página cargada', 'info');
+            updateModulesStatus();
+        });
+    </script>
+</body>
+</html>

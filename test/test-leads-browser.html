@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Leads Browser</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        .log {
+            background: #f9f9f9;
+            border: 1px solid #ddd;
+            padding: 10px;
+            border-radius: 4px;
+            margin-top: 20px;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .log-entry {
+            padding: 5px 0;
+            border-bottom: 1px solid #eee;
+        }
+        .log-entry.error {
+            color: #d32f2f;
+        }
+        .log-entry.success {
+            color: #388e3c;
+        }
+        .log-entry.info {
+            color: #1976d2;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        table th, table td {
+            padding: 10px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        table th {
+            background: #f5f5f5;
+            font-weight: bold;
+        }
+        table tr:hover {
+            background: #f9f9f9;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 Test de Leads desde Navegador</h1>
+        
+        <div>
+            <button onclick="testConnection()">🔗 Conectar a Odoo</button>
+            <button onclick="testSearch()">🔍 Buscar Leads</button>
+            <button onclick="testReadLead()">📖 Leer Lead #2</button>
+            <button onclick="testCreateLead()">➕ Crear Lead</button>
+            <button onclick="clearLog()">🗑️ Limpiar Log</button>
+        </div>
+        
+        <div class="log" id="log"></div>
+        
+        <h2>📊 Resultados</h2>
+        <table id="results">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Nombre</th>
+                    <th>Email</th>
+                    <th>Teléfono</th>
+                    <th>Contacto</th>
+                </tr>
+            </thead>
+            <tbody id="results-body">
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+        const proxyUrl = 'http://localhost:9999';
+        const database = 'odoo19';
+        const uid = 5;
+        const token = '1fc63a72dcf97e88aab89c5a8a54dc0eac25cb9b';
+
+        function log(message, type = 'info') {
+            const logEl = document.getElementById('log');
+            const entry = document.createElement('div');
+            entry.className = `log-entry ${type}`;
+            entry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            logEl.appendChild(entry);
+            logEl.scrollTop = logEl.scrollHeight;
+        }
+
+        function clearLog() {
+            document.getElementById('log').innerHTML = '';
+        }
+
+        async function rpc(model, method, args, kwargs = {}) {
+            log(`📡 RPC: ${model}.${method}(...)`, 'info');
+            
+            try {
+                const payload = {
+                    jsonrpc: '2.0',
+                    method: 'call',
+                    params: {
+                        service: 'object',
+                        method: 'execute_kw',
+                        args: [database, uid, token, model, method, args, kwargs]
+                    },
+                    id: Math.random()
+                };
+
+                const response = await fetch(`${proxyUrl}/jsonrpc`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+
+                const data = await response.json();
+
+                if (data.error) {
+                    log(`❌ Error: ${data.error.message}`, 'error');
+                    return null;
+                }
+
+                log(`✅ Resultado: ${JSON.stringify(data.result).substring(0, 100)}...`, 'success');
+                return data.result;
+            } catch (error) {
+                log(`❌ Error de red: ${error.message}`, 'error');
+                return null;
+            }
+        }
+
+        async function testConnection() {
+            log('🔄 Probando conexión...', 'info');
+            const result = await rpc('res.partner', 'search', [[]], {});
+            if (result !== null) {
+                log(`✨ Conexión exitosa. Encontrados ${result.length} partners`, 'success');
+            }
+        }
+
+        async function testSearch() {
+            log('🔍 Buscando leads...', 'info');
+            const result = await rpc('crm.lead', 'search', [[]], { offset: 0, limit: 10 });
+            if (result !== null) {
+                log(`✨ Encontrados ${result.length} leads: ${result.join(', ')}`, 'success');
+            }
+        }
+
+        async function testReadLead() {
+            log('📖 Leyendo lead #2...', 'info');
+            const fields = ['id', 'name', 'email_from', 'phone', 'contact_name'];
+            const result = await rpc('crm.lead', 'read', [[2], fields], {});
+            
+            if (result && result.length > 0) {
+                const lead = result[0];
+                log(`✨ Lead leído exitosamente`, 'success');
+                
+                // Mostrar en tabla
+                const tbody = document.getElementById('results-body');
+                tbody.innerHTML = '';
+                
+                const row = tbody.insertRow();
+                row.insertCell(0).textContent = lead.id;
+                row.insertCell(1).textContent = lead.name;
+                row.insertCell(2).textContent = lead.email_from || '-';
+                row.insertCell(3).textContent = lead.phone || '-';
+                row.insertCell(4).textContent = lead.contact_name || '-';
+            }
+        }
+
+        async function testCreateLead() {
+            log('➕ Creando lead...', 'info');
+            const leadData = {
+                name: 'Lead de Prueba ' + new Date().toISOString().substring(0, 10),
+                email_from: 'test@browser.local',
+                phone: '+549999999',
+                contact_name: 'Test Browser',
+                description: 'Creado desde test navegador',
+                probability: 25
+            };
+            
+            const result = await rpc('crm.lead', 'create', [leadData], {});
+            
+            if (result) {
+                log(`✨ Lead creado con ID: ${result}`, 'success');
+            }
+        }
+
+        // Auto-test al cargar
+        window.addEventListener('load', () => {
+            log('🌐 Página cargada. Haz clic en los botones para probar.', 'info');
+        });
+    </script>
+</body>
+</html>

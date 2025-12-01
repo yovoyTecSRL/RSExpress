@@ -1,0 +1,985 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RSExpress - Gestor de Pedidos desde Odoo CRM</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #ff6b35;
+            --secondary: #3498db;
+            --success: #27ae60;
+            --warning: #f39c12;
+            --danger: #e74c3c;
+            --dark: #2c3e50;
+            --light: #ecf0f1;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        
+        .header h1 {
+            color: var(--dark);
+            margin-bottom: 10px;
+        }
+        
+        .header p {
+            color: #666;
+        }
+        
+        .tabs {
+            display: flex;
+            gap: 0;
+            margin-bottom: 20px;
+            background: white;
+            border-radius: 12px 12px 0 0;
+            overflow: hidden;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        
+        .tab-btn {
+            flex: 1;
+            padding: 15px 20px;
+            border: none;
+            background: #f8f9fa;
+            cursor: pointer;
+            font-weight: 600;
+            color: #666;
+            transition: all 0.3s;
+            border-bottom: 3px solid transparent;
+        }
+        
+        .tab-btn:hover {
+            background: #e8e9ea;
+        }
+        
+        .tab-btn.active {
+            background: white;
+            color: var(--primary);
+            border-bottom-color: var(--primary);
+        }
+        
+        .content {
+            background: white;
+            border-radius: 0 0 12px 12px;
+            padding: 30px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: var(--dark);
+        }
+        
+        .form-group input,
+        .form-group textarea,
+        .form-group select {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+            transition: border 0.3s;
+        }
+        
+        .form-group input:focus,
+        .form-group textarea:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(255, 107, 53, 0.1);
+        }
+        
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: #e55a24;
+            box-shadow: 0 4px 12px rgba(255, 107, 53, 0.3);
+        }
+        
+        .btn-secondary {
+            background: var(--secondary);
+            color: white;
+        }
+        
+        .btn-secondary:hover {
+            background: #2980b9;
+            box-shadow: 0 4px 12px rgba(52, 152, 219, 0.3);
+        }
+        
+        .btn-success {
+            background: var(--success);
+            color: white;
+        }
+        
+        .btn-success:hover {
+            background: #229954;
+            box-shadow: 0 4px 12px rgba(39, 174, 96, 0.3);
+        }
+        
+        .btn-small {
+            padding: 8px 14px;
+            font-size: 12px;
+            font-weight: 600;
+            white-space: nowrap;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            transition: all 0.2s ease;
+        }
+        
+        .btn-small:hover {
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+            transform: translateY(-1px);
+        }
+        
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+        }
+        
+        .card {
+            background: #f8f9fa;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 20px;
+            transition: all 0.3s;
+        }
+        
+        .card:hover {
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            transform: translateY(-4px);
+        }
+        
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: start;
+            margin-bottom: 15px;
+        }
+        
+        .card-title {
+            font-weight: 700;
+            color: var(--dark);
+            font-size: 16px;
+        }
+        
+        .card-subtitle {
+            font-size: 12px;
+            color: #999;
+            margin-top: 4px;
+        }
+        
+        .status-badge {
+            display: inline-block;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        
+        .status-pendiente {
+            background: #ffc107;
+            color: #000;
+            border: 1px solid #ffb300;
+        }
+        
+        .status-confirmado {
+            background: #17a2b8;
+            color: white;
+            border: 1px solid #138496;
+        }
+        
+        .status-asignado {
+            background: #28a745;
+            color: white;
+            border: 1px solid #1e7e34;
+        }
+        
+        .status-en_entrega {
+            background: #007bff;
+            color: white;
+            border: 1px solid #0056b3;
+        }
+        
+        .status-completado {
+            background: #20c997;
+            color: white;
+            border: 1px solid #0ca678;
+        }
+        
+        .status-cancelado {
+            background: #dc3545;
+            color: white;
+            border: 1px solid #c82333;
+        }
+        
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        
+        .info-row:last-child {
+            border-bottom: none;
+        }
+        
+        .info-label {
+            font-weight: 600;
+            color: #666;
+            font-size: 12px;
+        }
+        
+        .info-value {
+            color: var(--dark);
+            font-weight: 500;
+        }
+        
+        .connection-status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 15px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        
+        .connection-status.connected {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .connection-status.disconnected {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            display: inline-block;
+            animation: pulse 2s infinite;
+        }
+        
+        .status-dot.connected {
+            background: #28a745;
+        }
+        
+        .status-dot.disconnected {
+            background: #dc3545;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.6; }
+        }
+        
+        .alert {
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .alert-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .alert-error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .alert-info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        
+        #leadsContainer {
+            overflow-x: auto;
+            overflow-y: auto;
+            border-radius: 8px;
+            border: 1px solid #ddd;
+            max-height: 600px;
+        }
+
+        .table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+            margin: 0;
+        }
+        
+        .table thead {
+            background: #2c3e50;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+        
+        .table th {
+            padding: 14px 12px;
+            text-align: left;
+            font-weight: 700;
+            color: white;
+            border-bottom: 2px solid #1a252f;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .table td {
+            padding: 14px 12px;
+            border-bottom: 1px solid #e0e0e0;
+            color: #2c3e50;
+            font-weight: 500;
+        }
+        
+        .table tbody tr {
+            transition: background-color 0.2s;
+        }
+        
+        .table tbody tr:hover {
+            background: #f0f4f8;
+            box-shadow: inset 0 0 8px rgba(0, 0, 0, 0.05);
+        }
+        
+        .table tbody tr:nth-child(even) {
+            background: #fafbfc;
+        }
+        
+        .table tbody tr:nth-child(odd) {
+            background: white;
+        }
+        
+        /* Estilos para scrollbar */
+        #leadsContainer::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        
+        #leadsContainer::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 8px;
+        }
+        
+        #leadsContainer::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 8px;
+        }
+        
+        #leadsContainer::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: #999;
+        }
+        
+        .empty-state i {
+            font-size: 48px;
+            margin-bottom: 15px;
+            color: #ddd;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 40px;
+        }
+        
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid var(--primary);
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1><i class="fas fa-cube"></i> Gestor de Pedidos - Integración Odoo CRM</h1>
+            <p>Convierte leads de Odoo en pedidos y entregas para RSExpress</p>
+            <div style="margin-top: 20px; display: flex; justify-content: space-between; align-items: center;">
+                <div id="connectionStatus" class="connection-status disconnected">
+                    <span class="status-dot disconnected"></span>
+                    <span id="statusText">Desconectado de Odoo</span>
+                </div>
+                <button class="btn btn-primary" onclick="connectToOdoo()">
+                    <i class="fas fa-plug"></i> Conectar a Odoo
+                </button>
+            </div>
+        </div>
+        
+        <!-- Tabs -->
+        <div class="tabs">
+            <button class="tab-btn active" data-tab="leads" onclick="switchTab('leads')">
+                <i class="fas fa-list"></i> Leads de Odoo
+            </button>
+            <button class="tab-btn" data-tab="orders" onclick="switchTab('orders')">
+                <i class="fas fa-shopping-cart"></i> Pedidos
+            </button>
+            <button class="tab-btn" data-tab="create" onclick="switchTab('create')">
+                <i class="fas fa-plus"></i> Crear Pedido
+            </button>
+            <button class="tab-btn" data-tab="deliveries" onclick="switchTab('deliveries')">
+                <i class="fas fa-box"></i> Entregas
+            </button>
+        </div>
+        
+        <!-- Content -->
+        <div class="content">
+            <!-- Tab: Leads de Odoo -->
+            <div id="leads-tab" class="tab-content active">
+                <h2><i class="fas fa-list"></i> Leads de Odoo CRM</h2>
+                <p style="color: #666; margin-bottom: 20px;">Lista de leads activos en el CRM que pueden convertirse en pedidos</p>
+                
+                <div style="margin-bottom: 20px;">
+                    <button class="btn btn-secondary" onclick="loadLeads()">
+                        <i class="fas fa-sync-alt"></i> Recargar Leads
+                    </button>
+                </div>
+                
+                <div id="leadsContainer">
+                    <div class="empty-state">
+                        <i class="fas fa-inbox"></i>
+                        <p>Conecta a Odoo para ver los leads</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Tab: Pedidos -->
+            <div id="orders-tab" class="tab-content">
+                <h2><i class="fas fa-shopping-cart"></i> Gestión de Pedidos</h2>
+                <p style="color: #666; margin-bottom: 20px;">Ver y gestionar todos los pedidos creados</p>
+                
+                <div id="ordersContainer">
+                    <div class="empty-state">
+                        <i class="fas fa-inbox"></i>
+                        <p>No hay pedidos registrados</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Tab: Crear Pedido -->
+            <div id="create-tab" class="tab-content">
+                <h2><i class="fas fa-plus"></i> Crear Nuevo Pedido</h2>
+                
+                <form id="orderForm" onsubmit="handleCreateOrder(event)" style="max-width: 600px;">
+                    <div class="form-group">
+                        <label>Lead de Odoo *</label>
+                        <select id="leadSelect" required>
+                            <option value="">Selecciona un lead...</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Cliente *</label>
+                        <input type="text" id="customerName" required placeholder="Nombre del cliente">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Email *</label>
+                        <input type="email" id="customerEmail" required placeholder="email@ejemplo.com">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Teléfono</label>
+                        <input type="tel" id="customerPhone" placeholder="Teléfono">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Dirección *</label>
+                        <input type="text" id="customerAddress" required placeholder="Dirección de entrega">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Descripción del Pedido</label>
+                        <textarea id="orderDescription" rows="4" placeholder="Detalles del pedido..."></textarea>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Monto *</label>
+                        <input type="number" id="orderAmount" required min="0" step="0.01" placeholder="0.00">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Prioridad</label>
+                        <select id="orderPriority">
+                            <option value="normal">Normal</option>
+                            <option value="alta">Alta</option>
+                            <option value="urgente">Urgente</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Conductor Asignado</label>
+                        <select id="assignedDriver">
+                            <option value="">Seleccionar después...</option>
+                            <option value="1">Carlos Ramírez</option>
+                            <option value="2">María González</option>
+                            <option value="3">Juan Pérez</option>
+                            <option value="4">Ana Martínez</option>
+                        </select>
+                    </div>
+                    
+                    <div class="button-group">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-check"></i> Crear Pedido
+                        </button>
+                        <button type="reset" class="btn" style="background: #ddd; color: #333;">
+                            <i class="fas fa-times"></i> Limpiar
+                        </button>
+                    </div>
+                </form>
+            </div>
+            
+            <!-- Tab: Entregas -->
+            <div id="deliveries-tab" class="tab-content">
+                <h2><i class="fas fa-box"></i> Entregas Generadas</h2>
+                <p style="color: #666; margin-bottom: 20px;">Entregas creadas desde los pedidos</p>
+                
+                <div id="deliveriesContainer">
+                    <div class="empty-state">
+                        <i class="fas fa-inbox"></i>
+                        <p>No hay entregas registradas</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Scripts -->
+    <script src="scripts/odoo/odoo-connector.js?v=20251130-005"></script>
+    <script src="scripts/odoo/order-manager.js?v=20251130-005"></script>
+    <script src="scripts/fleet/driver-fleet-panel.js?v=20251130-005"></script>
+    <script>
+        // Variables globales
+        let odooConnector = null;
+        let orderManager = null;
+        let allLeads = [];
+        
+        /**
+         * Conectar a Odoo via JSON-RPC (rsexpress.online)
+         */
+        async function connectToOdoo() {
+            try {
+                document.querySelector('.btn-primary').disabled = true;
+                document.querySelector('.btn-primary').innerHTML = '<i class="fas fa-spinner fa-spin"></i> Conectando...';
+                
+                // Detectar si proxy está disponible
+                let proxyUrl = null;
+                try {
+                    const proxyTest = await fetch('http://localhost:9999/jsonrpc', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ jsonrpc: '2.0', method: 'version', params: {}, id: 0 })
+                    });
+                    if (proxyTest.ok) {
+                        proxyUrl = 'http://localhost:9999';
+                        console.log('✅ Proxy OdooProxy detectado en localhost:9999');
+                    }
+                } catch (e) {
+                    console.log('ℹ️ Proxy no disponible, usando conexión directa');
+                }
+                
+                // Crear instancia del conector con datos de rsexpress.online
+                odooConnector = new OdooConnector({
+                    url: proxyUrl || 'https://rsexpress.online',
+                    database: 'odoo19',
+                    uid: 5,
+                    token: '1fc63a72dcf97e88aab89c5a8a54dc0eac25cb9b'
+                });
+                
+                // Intentar conexión
+                const connected = await odooConnector.connect();
+                
+                if (connected) {
+                    // Crear manager de pedidos
+                    orderManager = new OrderManager(odooConnector);
+                    
+                    // Actualizar UI
+                    updateConnectionStatus(true);
+                    
+                    // Cargar leads existentes
+                    await loadLeads();
+                    
+                    // Crear un lead por defecto si no hay
+                    showAlert('info', '⏳ Verificando leads...');
+                    let leads = await odooConnector.getLeads([], 0, 1);
+                    
+                    if (leads.length === 0) {
+                        console.log('📝 No hay leads, creando uno por defecto...');
+                        showAlert('info', '📝 Creando lead de prueba...');
+                        
+                        const newLead = await odooConnector.createDefaultLead();
+                        
+                        if (newLead) {
+                            console.log('✅ Lead por defecto creado:', newLead);
+                            showAlert('success', '✅ Lead de prueba creado y cargado');
+                            
+                            // Recargar leads
+                            await loadLeads();
+                        } else {
+                            showAlert('warning', '⚠️ No se pudo crear el lead por defecto');
+                        }
+                    } else {
+                        showAlert('success', '✅ Conectado correctamente a Odoo');
+                    }
+                } else {
+                    updateConnectionStatus(false);
+                    showAlert('error', '❌ No se pudo conectar a Odoo');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                updateConnectionStatus(false);
+                showAlert('error', `❌ Error: ${error.message}`);
+            } finally {
+                document.querySelector('.btn-primary').disabled = false;
+                document.querySelector('.btn-primary').innerHTML = '<i class="fas fa-plug"></i> Conectar a Odoo';
+            }
+        }
+        
+        /**
+         * Actualizar estado de conexión
+         */
+        function updateConnectionStatus(connected) {
+            const status = document.getElementById('connectionStatus');
+            const statusText = document.getElementById('statusText');
+            const dot = status.querySelector('.status-dot');
+            
+            if (connected) {
+                status.className = 'connection-status connected';
+                statusText.textContent = 'Conectado a Odoo ✓';
+                dot.className = 'status-dot connected';
+            } else {
+                status.className = 'connection-status disconnected';
+                statusText.textContent = 'Desconectado de Odoo';
+                dot.className = 'status-dot disconnected';
+            }
+        }
+        
+        /**
+         * Cambiar pestaña
+         */
+        function switchTab(tabName) {
+            // Ocultar todos los tabs
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            
+            // Mostrar tab seleccionado
+            const tabElement = document.getElementById(tabName + '-tab');
+            if (tabElement) {
+                tabElement.classList.add('active');
+            }
+            
+            // Marcar botón activo usando data-tab
+            const activeBtn = document.querySelector(`[data-tab="${tabName}"]`);
+            if (activeBtn) {
+                activeBtn.classList.add('active');
+            }
+        }
+        
+        /**
+         * Cargar leads desde Odoo
+         */
+        async function loadLeads() {
+            if (!odooConnector) {
+                showAlert('error', '❌ No está conectado a Odoo');
+                return;
+            }
+            
+            try {
+                const leadsContainer = document.getElementById('leadsContainer');
+                leadsContainer.innerHTML = '<div class="loading"><div class="spinner"></div>Cargando leads...</div>';
+                
+                // Obtener leads
+                const leads = await odooConnector.getLeads([], 0, 20);
+                allLeads = leads;
+                
+                if (leads.length === 0) {
+                    leadsContainer.innerHTML = '<div class="empty-state"><i class="fas fa-inbox"></i><p>No hay leads disponibles</p></div>';
+                    return;
+                }
+                
+                // Renderizar leads
+                let html = `<table class="table"><thead><tr>
+                    <th>ID</th>
+                    <th>Nombre</th>
+                    <th>Empresa</th>
+                    <th>Email</th>
+                    <th>Teléfono</th>
+                    <th>Estado</th>
+                    <th>Acción</th>
+                </tr></thead><tbody>`;
+                
+                leads.forEach(lead => {
+                    html += `<tr>
+                        <td>${lead.id}</td>
+                        <td><strong>${lead.name}</strong></td>
+                        <td>${lead.contact_name || '-'}</td>
+                        <td>${lead.email_from || '-'}</td>
+                        <td>${lead.phone || '-'}</td>
+                        <td><span class="status-badge status-pendiente">Activo</span></td>
+                        <td>
+                            <button class="btn btn-small btn-primary" onclick="convertLeadToOrder(${lead.id})">
+                                <i class="fas fa-arrow-right"></i> Convertir
+                            </button>
+                        </td>
+                    </tr>`;
+                });
+                
+                html += '</tbody></table>';
+                leadsContainer.innerHTML = html;
+                
+                // Actualizar select de leads
+                const leadSelect = document.getElementById('leadSelect');
+                leads.forEach(lead => {
+                    const option = document.createElement('option');
+                    option.value = lead.id;
+                    option.textContent = `${lead.name} (${lead.contact_name || 'Sin contacto'})`;
+                    leadSelect.appendChild(option);
+                });
+                
+            } catch (error) {
+                console.error('Error cargando leads:', error);
+                showAlert('error', `❌ Error cargando leads: ${error.message}`);
+            }
+        }
+        
+        /**
+         * Convertir lead a pedido
+         */
+        async function convertLeadToOrder(leadId) {
+            if (!orderManager) {
+                showAlert('error', '❌ Order Manager no inicializado');
+                return;
+            }
+            
+            try {
+                const order = await orderManager.createOrderFromLead(leadId);
+                
+                if (order) {
+                    showAlert('success', `✅ Pedido ${order.reference} creado exitosamente`);
+                    loadOrders();
+                } else {
+                    showAlert('error', '❌ Error creando pedido');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                showAlert('error', `❌ Error: ${error.message}`);
+            }
+        }
+        
+        /**
+         * Manejar creación de pedido
+         */
+        async function handleCreateOrder(event) {
+            event.preventDefault();
+            
+            if (!orderManager) {
+                showAlert('error', '❌ Order Manager no inicializado');
+                return;
+            }
+            
+            try {
+                const leadId = parseInt(document.getElementById('leadSelect').value);
+                
+                if (!leadId) {
+                    showAlert('error', '❌ Debes seleccionar un lead');
+                    return;
+                }
+                
+                const order = await orderManager.createOrderFromLead(leadId);
+                
+                if (!order) {
+                    showAlert('error', '❌ Error creando pedido');
+                    return;
+                }
+                
+                // Actualizar datos adicionales
+                order.customer.email = document.getElementById('customerEmail').value;
+                order.customer.phone = document.getElementById('customerPhone').value;
+                order.amount = parseFloat(document.getElementById('orderAmount').value);
+                order.priority = document.getElementById('orderPriority').value;
+                
+                const driverId = document.getElementById('assignedDriver').value;
+                if (driverId) {
+                    orderManager.assignDriver(order.id, parseInt(driverId));
+                }
+                
+                showAlert('success', `✅ Pedido ${order.reference} creado exitosamente`);
+                document.getElementById('orderForm').reset();
+                loadOrders();
+                switchTab('orders');
+                
+            } catch (error) {
+                console.error('Error:', error);
+                showAlert('error', `❌ Error: ${error.message}`);
+            }
+        }
+        
+        /**
+         * Cargar pedidos
+         */
+        function loadOrders() {
+            if (!orderManager) return;
+            
+            const orders = orderManager.getAllOrders();
+            const container = document.getElementById('ordersContainer');
+            
+            if (orders.length === 0) {
+                container.innerHTML = '<div class="empty-state"><i class="fas fa-inbox"></i><p>No hay pedidos registrados</p></div>';
+                return;
+            }
+            
+            let html = `<table class="table"><thead><tr>
+                <th>Referencia</th>
+                <th>Cliente</th>
+                <th>Monto</th>
+                <th>Estado</th>
+                <th>Conductor</th>
+                <th>Acción</th>
+            </tr></thead><tbody>`;
+            
+            orders.forEach(order => {
+                const statusClass = `status-${order.status}`;
+                html += `<tr>
+                    <td><strong>${order.reference}</strong></td>
+                    <td>${order.customer.name}</td>
+                    <td>$${order.amount.toFixed(2)}</td>
+                    <td><span class="status-badge ${statusClass}">${order.status}</span></td>
+                    <td>${order.assigned_driver ? `Driver #${order.assigned_driver}` : 'Sin asignar'}</td>
+                    <td>
+                        <button class="btn btn-small btn-secondary" onclick="viewOrder(${order.id})">
+                            <i class="fas fa-eye"></i> Ver
+                        </button>
+                    </td>
+                </tr>`;
+            });
+            
+            html += '</tbody></table>';
+            container.innerHTML = html;
+        }
+        
+        /**
+         * Ver detalles del pedido
+         */
+        function viewOrder(orderId) {
+            const order = orderManager.getOrder(orderId);
+            if (!order) {
+                showAlert('error', '❌ Pedido no encontrado');
+                return;
+            }
+            
+            console.log('Detalles del pedido:', order);
+            alert(`📦 Pedido ${order.reference}\n\nCliente: ${order.customer.name}\nMonto: $${order.amount}\nEstado: ${order.status}\n\nVer consola para más detalles`);
+        }
+        
+        /**
+         * Mostrar alerta
+         */
+        function showAlert(type, message) {
+            const alertClass = `alert alert-${type}`;
+            const icon = type === 'success' ? '✓' : type === 'error' ? '✕' : 'ℹ';
+            const html = `<div class="${alertClass}"><i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : 'info-circle'}"></i> ${message}</div>`;
+            
+            const alertContainer = document.querySelector('.content');
+            const alertDiv = document.createElement('div');
+            alertDiv.innerHTML = html;
+            alertContainer.insertBefore(alertDiv, alertContainer.firstChild);
+            
+            setTimeout(() => alertDiv.remove(), 5000);
+        }
+        
+        // Inicializar
+        console.log('✅ Página de gestión de pedidos cargada');
+    </script>
+</body>
+</html>

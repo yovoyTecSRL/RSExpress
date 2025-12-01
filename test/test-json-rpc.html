@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prueba JSON-RPC Odoo</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Courier New', monospace;
+            background: #1e1e1e;
+            color: #e0e0e0;
+            padding: 20px;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        h1 {
+            color: #4ec9b0;
+            margin-bottom: 20px;
+        }
+        
+        .test-section {
+            background: #252526;
+            border: 1px solid #3e3e42;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+        }
+        
+        .test-section h2 {
+            color: #569cd6;
+            font-size: 16px;
+            margin-bottom: 10px;
+        }
+        
+        .test-btn {
+            background: #007acc;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px 5px 5px 0;
+            font-family: monospace;
+        }
+        
+        .test-btn:hover {
+            background: #005a9e;
+        }
+        
+        .test-btn:disabled {
+            background: #666;
+            cursor: not-allowed;
+        }
+        
+        .output {
+            background: #1e1e1e;
+            border: 1px solid #555;
+            padding: 15px;
+            margin-top: 10px;
+            border-radius: 4px;
+            max-height: 300px;
+            overflow-y: auto;
+            font-size: 12px;
+        }
+        
+        .status {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 3px;
+            font-size: 12px;
+            margin-left: 10px;
+        }
+        
+        .status.loading {
+            background: #f39c12;
+            color: white;
+        }
+        
+        .status.success {
+            background: #27ae60;
+            color: white;
+        }
+        
+        .status.error {
+            background: #e74c3c;
+            color: white;
+        }
+        
+        .log-line {
+            padding: 5px 0;
+            border-bottom: 1px solid #333;
+        }
+        
+        .log-line:last-child {
+            border-bottom: none;
+        }
+        
+        .log-info { color: #4ec9b0; }
+        .log-success { color: #27ae60; }
+        .log-error { color: #e74c3c; }
+        .log-warn { color: #f39c12; }
+        .log-json { color: #ce9178; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 Prueba de Conexión JSON-RPC Odoo</h1>
+        
+        <div class="test-section">
+            <h2>Configuración <span class="status" id="config-status">Detectando...</span></h2>
+            <div class="output" id="config-output">
+                <div class="log-line log-info">🔌 URL: <strong id="display-url">Detectando proxy...</strong></div>
+                <div class="log-line log-info">📊 Database: <strong>odoo19</strong></div>
+                <div class="log-line log-info">👤 UID: <strong>5</strong></div>
+                <div class="log-line log-info">🔐 Token: <strong>1fc63a72dcf97e88aab89c5a8a54dc0eac25cb9b</strong></div>
+            </div>
+        </div>
+        
+        <div class="test-section">
+            <h2>Pruebas Disponibles</h2>
+            <button class="test-btn" onclick="testConnection()">1️⃣ Probar Conexión (Partners)</button>
+            <button class="test-btn" onclick="testLeads()">2️⃣ Obtener Leads CRM</button>
+            <button class="test-btn" onclick="testOrders()">3️⃣ Obtener Órdenes</button>
+            <button class="test-btn" onclick="testCreateLead()">4️⃣ Crear Lead Prueba</button>
+            <button class="test-btn" onclick="clearLog()">🗑️ Limpiar Log</button>
+        </div>
+        
+        <div class="test-section">
+            <h2>Log de Resultados <span class="status" id="result-status">Esperando...</span></h2>
+            <div class="output" id="result-output">
+                <div class="log-line log-info">Selecciona una prueba para comenzar...</div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Configuración con auto-detección de proxy
+        const config = {
+            url: 'https://rsexpress.online',  // URL por defecto (directo)
+            endpoint: '/jsonrpc',
+            database: 'odoo19',
+            uid: 5,
+            token: '1fc63a72dcf97e88aab89c5a8a54dc0eac25cb9b'
+        };
+        
+        let requestId = 0;
+        
+        // Detectar si proxy está disponible al cargar
+        async function detectProxy() {
+            try {
+                const response = await fetch('http://localhost:9999/jsonrpc', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ jsonrpc: '2.0', method: 'version', params: {}, id: 0 })
+                });
+                if (response.ok) {
+                    config.url = 'http://localhost:9999';
+                    console.log('✅ Proxy detectado en localhost:9999');
+                    document.getElementById('display-url').innerHTML = '✅ <strong>http://localhost:9999/jsonrpc</strong> (Proxy Local)';
+                    document.getElementById('config-status').innerHTML = '✅ Proxy';
+                    return true;
+                }
+            } catch (e) {
+                console.log('ℹ️ Proxy no disponible, usando conexión directa');
+            }
+            document.getElementById('display-url').innerHTML = '🔗 <strong>https://rsexpress.online/jsonrpc</strong> (Direct)';
+            document.getElementById('config-status').innerHTML = '⚠️ Direct';
+            return false;
+        }
+        
+        // Función para loguear
+        function log(type, message, data = null) {
+            const output = document.getElementById('result-output');
+            const line = document.createElement('div');
+            line.className = `log-line log-${type}`;
+            
+            if (data) {
+                line.innerHTML = `<strong>${message}:</strong><br><pre>${JSON.stringify(data, null, 2)}</pre>`;
+            } else {
+                line.innerHTML = message;
+            }
+            
+            output.appendChild(line);
+            output.scrollTop = output.scrollHeight;
+        }
+        
+        function setStatus(type) {
+            const status = document.getElementById('result-status');
+            status.className = 'status ' + type;
+            status.textContent = {
+                loading: '⏳ Procesando...',
+                success: '✅ Éxito',
+                error: '❌ Error'
+            }[type];
+        }
+        
+        function clearLog() {
+            document.getElementById('result-output').innerHTML = '';
+            setStatus('loading');
+        }
+        
+        // Realizar llamada JSON-RPC
+        async function jsonRpc(model, method, args = [], kwargs = {}) {
+            requestId++;
+            
+            const payload = {
+                jsonrpc: '2.0',
+                method: 'call',
+                params: {
+                    service: 'object',
+                    method: 'execute_kw',
+                    args: [
+                        config.database,
+                        config.uid,
+                        config.token,
+                        model,
+                        method,
+                        args
+                    ]
+                },
+                id: requestId
+            };
+            
+            if (Object.keys(kwargs).length > 0) {
+                payload.params.args.push(kwargs);
+            }
+            
+            log('info', `🔄 Llamada JSON-RPC: ${model}.${method}()`);
+            log('json', 'Payload enviado:', payload);
+            
+            try {
+                const response = await fetch(`${config.url}${config.endpoint}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(payload)
+                });
+                
+                const data = await response.json();
+                
+                if (data.error) {
+                    log('error', `Error RPC (${model}.${method}):`, data.error);
+                    setStatus('error');
+                    return null;
+                }
+                
+                log('success', `✅ Resultado de ${model}.${method}():`, data.result);
+                setStatus('success');
+                return data.result;
+            } catch (error) {
+                log('error', `Error de conexión: ${error.message}`);
+                setStatus('error');
+                return null;
+            }
+        }
+        
+        // Test 1: Conexión básica (Partners)
+        async function testConnection() {
+            clearLog();
+            log('info', '🧪 Prueba 1: Obtener Partners (verificar conexión)');
+            
+            const partners = await jsonRpc('res.partner', 'search_read', [[]]);
+            if (partners) {
+                log('success', `Encontrados ${partners.length} partners`);
+                partners.slice(0, 3).forEach(p => {
+                    log('info', `  • ${p.name} (ID: ${p.id})`);
+                });
+            }
+        }
+        
+        // Test 2: Obtener Leads
+        async function testLeads() {
+            clearLog();
+            log('info', '🧪 Prueba 2: Obtener Leads CRM');
+            
+            const leads = await jsonRpc('crm.lead', 'search_read', [[]]);
+            if (leads) {
+                log('success', `Encontrados ${leads.length} leads`);
+                leads.slice(0, 3).forEach(lead => {
+                    log('info', `  • ${lead.name} (${lead.email_from || 'sin email'})`);
+                });
+            }
+        }
+        
+        // Test 3: Obtener Órdenes
+        async function testOrders() {
+            clearLog();
+            log('info', '🧪 Prueba 3: Obtener Órdenes de Venta');
+            
+            const orders = await jsonRpc('sale.order', 'search_read', [[]]);
+            if (orders) {
+                log('success', `Encontradas ${orders.length} órdenes`);
+                orders.slice(0, 3).forEach(order => {
+                    log('info', `  • ${order.name} (Total: ${order.amount_total})`);
+                });
+            }
+        }
+        
+        // Test 4: Crear Lead
+        async function testCreateLead() {
+            clearLog();
+            log('info', '🧪 Prueba 4: Crear Lead de Prueba');
+            
+            const leadData = {
+                name: 'Cliente Test JSON-RPC',
+                email_from: 'test@jsonrpc.local',
+                phone: '+1234567890',
+                company_name: 'Test Company',
+                description: 'Lead creado via JSON-RPC en ' + new Date().toISOString()
+            };
+            
+            log('info', 'Datos del lead:', leadData);
+            
+            const leadId = await jsonRpc('crm.lead', 'create', [leadData]);
+            if (leadId) {
+                log('success', `✅ Lead creado con ID: ${leadId}`);
+                
+                // Obtener el lead creado
+                const lead = await jsonRpc('crm.lead', 'read', [[leadId]]);
+                if (lead && lead[0]) {
+                    log('success', 'Lead creado:', lead[0]);
+                }
+            }
+        }
+        
+        // Log inicial
+        log('info', 'Sistema de prueba iniciado');
+        setStatus('loading');
+        
+        // Detectar proxy y auto-test al cargar
+        (async () => {
+            await detectProxy();
+            log('info', `📡 Conectando a: ${config.url}`);
+            setTimeout(() => {
+                setStatus('loading');
+                log('info', '🔄 Realizando test de conexión automático...');
+                testConnection();
+            }, 500);
+        })();
+    </script>
+</body>
+</html>

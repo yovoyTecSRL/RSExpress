@@ -1,0 +1,27 @@
+
+╔════════════════════════════════════════════════════╗
+║      🚀 RSEXPRESS - INICIANDO SERVICIOS            ║
+╚════════════════════════════════════════════════════╝
+    
+
+✅ PROXY SERVIDOR (OdooProxy)
+   ├─ Puerto: 9999
+   ├─ URL: http://localhost:9999/jsonrpc
+   ├─ Destino: https://rsexpress.online:443/jsonrpc
+   └─ CORS: ✅ Habilitado
+
+✨ Servicios listos:
+   • OdooProxy → http://localhost:9999/jsonrpc
+   • Conecta a → https://rsexpress.online/jsonrpc
+   • Maneja CORS automáticamente
+   • Pronto: Servidor principal en puerto 5555
+
+📝 Uso en código:
+   const connector = new OdooConnector({
+       url: 'http://localhost:9999',  // Usa proxy
+       database: 'odoo19',
+       uid: 5,
+       token: 'tu_token'
+   });
+        
+[PROXY] 2025-12-01T18:38:46.233Z - 200
