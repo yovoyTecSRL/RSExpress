@@ -12,8 +12,8 @@ class DeliveryLoader {
     }
 
     /**
-     * Genera ID de entrega con formato RS-EN-mmdd+autoincrement
-     * Ejemplo: RS-EN-1201-001, RS-EN-1201-002, etc
+     * Genera ID de entrega con formato RS-EN-mmdd.nnn (autoincrement sin decimales)
+     * Ejemplo: RS-EN-1201.001, RS-EN-1201.002, RS-EN-1201.003, etc
      */
     generateDeliveryId() {
         const now = new Date();
@@ -21,7 +21,7 @@ class DeliveryLoader {
         const day = String(now.getDate()).padStart(2, '0');
         this.deliveryCounter++;
         const counter = String(this.deliveryCounter).padStart(3, '0');
-        return `RS-EN-${month}${day}-${counter}`;
+        return `RS-EN-${month}${day}.${counter}`;
     }
 
     /**
