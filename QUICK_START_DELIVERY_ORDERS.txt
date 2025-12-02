@@ -1,0 +1,286 @@
+# 🚀 Quick Start - Delivery Orders Loader
+
+## ⚡ Inicio Rápido (5 minutos)
+
+### 1️⃣ Acceder a la Interfaz Web
+
+```
+http://localhost:5555/delivery-orders.html
+```
+
+### 2️⃣ Cargar Entregas
+
+1. Click en botón **"⬇️ Cargar desde Odoo"**
+2. Espera a que cargue (muestra mensaje de éxito)
+3. Ver entregas en el grid
+
+### 3️⃣ Filtrar Entregas
+
+- **Por Estado**: Elige en dropdown (Pendiente, En tránsito, etc.)
+- **Por Prioridad**: Elige en dropdown (Alta, Normal, Baja)
+- **Buscar**: Escribe nombre, cliente o ID
+
+### 4️⃣ Ver Entregas en Consola
+
+```javascript
+// Abrir consola del navegador (F12)
+
+// Ver todas las entregas
+console.log(loader.deliveries);
+
+// Ver estadísticas
+console.log(loader.getStatistics());
+
+// Buscar cliente específico
+console.log(loader.searchDeliveries('Restaurante'));
+
+// Ver entregas pendientes
+console.log(loader.getDeliveriesByState('pending'));
+
+// Actualizar estado
+loader.updateDeliveryStatus('ENT-1001', 'in-transit');
+
+// Asignar conductor
+loader.assignDriver('ENT-1001', 'D001', 'Carlos García');
+```
+
+## 📊 Ejemplos de Uso
+
+### Ejemplo 1: Cargar y Mostrar
+
+```javascript
+const loader = new DeliveryLoader(null);
+const result = await loader.loadDeliveries();
+
+console.log(`Cargadas ${result.count} entregas`);
+result.deliveries.forEach(d => {
+    console.log(`- ${d.id}: ${d.cliente} (${d.estado})`);
+});
+```
+
+### Ejemplo 2: Gestionar Estados
+
+```javascript
+const loader = new DeliveryLoader(null);
+await loader.loadDeliveries();
+
+// Actualizar estado
+const entrega = loader.deliveries[0];
+loader.updateDeliveryStatus(entrega.id, 'in-transit');
+console.log(`Estado actualizado: ${entrega.estado}`);
+console.log(`Timeline: ${entrega.timeline.length} eventos`);
+```
+
+### Ejemplo 3: Asignar Conductores
+
+```javascript
+const loader = new DeliveryLoader(null);
+await loader.loadDeliveries();
+
+// Asignar conductor a cada entrega pendiente
+const pending = loader.getDeliveriesByState('pending');
+pending.forEach((entrega, idx) => {
+    const conductorId = `D${String(idx + 1).padStart(3, '0')}`;
+    const conductorNombre = `Conductor ${idx + 1}`;
+    loader.assignDriver(entrega.id, conductorId, conductorNombre);
+});
+
+console.log('Conductores asignados');
+```
+
+### Ejemplo 4: Buscar y Filtrar
+
+```javascript
+const loader = new DeliveryLoader(null);
+await loader.loadDeliveries();
+
+// Entregas de alto valor urgentes
+const altas = loader.getDeliveriesByPriority('high');
+console.log(`${altas.length} entregas de ALTA prioridad`);
+
+// Buscar por cliente
+const restaurantes = loader.searchDeliveries('Restaurante');
+console.log(`${restaurantes.length} entregas para restaurantes`);
+
+// Entregas completadas de hoy
+const completadas = loader.getDeliveriesByState('completed');
+console.log(`${completadas.length} entregas completadas`);
+```
+
+### Ejemplo 5: Estadísticas
+
+```javascript
+const loader = new DeliveryLoader(null);
+await loader.loadDeliveries();
+
+const stats = loader.getStatistics();
+
+console.log(`
+📊 ESTADÍSTICAS DE ENTREGAS
+============================
+Total: ${stats.total}
+Pendientes: ${stats.pending} ⏳
+En tránsito: ${stats.inTransit} 🚚
+Completadas: ${stats.completed} ✅
+Fallidas: ${stats.failed} ❌
+
+💰 Monto Total: $${stats.montoTotal.toFixed(2)}
+📦 Ítems Total: ${stats.itemsTotal}
+`);
+```
+
+### Ejemplo 6: Exportar Datos
+
+```javascript
+const loader = new DeliveryLoader(null);
+await loader.loadDeliveries();
+
+// Obtener como JSON
+const json = loader.toJSON();
+
+// Convertir a string para guardar
+const jsonStr = JSON.stringify(json, null, 2);
+
+// En navegador: descargar como archivo
+const blob = new Blob([jsonStr], { type: 'application/json' });
+const url = URL.createObjectURL(blob);
+const a = document.createElement('a');
+a.href = url;
+a.download = 'entregas.json';
+a.click();
+```
+
+## 🧪 Ejecutar Pruebas
+
+### En Navegador
+
+```javascript
+// Abrir consola (F12)
+// Esperar a que cargue index.html
+// Ejecutar:
+
+runDeliveryTests();
+
+// Ver resultados en consola
+```
+
+### En Node.js
+
+```bash
+cd /home/menteavatar/Desktop/Projects/RSExpress/RSExpress
+
+node -e "
+const DeliveryLoader = require('./scripts/delivery/delivery-loader.js');
+const { runDeliveryTests } = require('./test/test-delivery-loader.js');
+
+(async () => {
+    const result = await runDeliveryTests();
+    console.log(\`Total: \${result.total}\`);
+    console.log(\`Passed: \${result.passed}\`);
+    console.log(\`Failed: \${result.failed}\`);
+})();
+"
+```
+
+## 📱 Datos de Demostración
+
+El sistema carga 5 órdenes de demostración si Odoo no está disponible:
+
+| ID | Cliente | Monto | Estado | Prioridad |
+|---|---------|--------|--------|-----------|
+| ENT-1001 | Restaurante La Esquina | $1,250 | Pending | High |
+| ENT-1002 | Tienda de Ropa Premium | $3,500 | Completed | Normal |
+| ENT-1003 | Software Solutions | $5,200 | In-Transit | High |
+| ENT-1004 | Farmacia Central | $890.50 | Pending | Normal |
+| ENT-1005 | Hotel Plaza Mayor | $4,100 | In-Transit | High |
+
+## 🔗 Integración con Componentes Existentes
+
+### Tarjetas de Entrega
+
+El loader usa automáticamente la clase `DeliveryCard` para renderizar:
+
+```javascript
+const loader = new DeliveryLoader(null);
+await loader.loadDeliveries();
+
+loader.deliveries.forEach(delivery => {
+    const card = new DeliveryCard(delivery);
+    card.mount(document.getElementById('grid'));
+});
+```
+
+### Con Odoo Connector
+
+```javascript
+// Si tienes OdooConnector disponible:
+const odoo = new OdooConnector('rsexpress.online', 443);
+const loader = new DeliveryLoader(odoo);
+
+// Cargar directamente desde Odoo
+await loader.fetchOrders();
+```
+
+## 🎯 Puntos de Referencia
+
+**Rutas disponibles:**
+- `http://localhost:5555/` - Página principal
+- `http://localhost:5555/delivery-cards.html` - Entregas visuales
+- `http://localhost:5555/delivery-orders.html` - Manager de pedidos
+- `http://localhost:5555/fleet-dashboard.html` - Panel de flota
+
+**Puertos:**
+- `5555` - HTTP Server (archivos estáticos)
+- `9999` - OdooProxy (reverse proxy a rsexpress.online)
+
+## ⚙️ Configuración
+
+### Cambiar Odoo Connector
+
+```javascript
+const customOdoo = new OdooConnector('tu-servidor.com', 443);
+const loader = new DeliveryLoader(customOdoo);
+```
+
+### Cambiar Zona de Coordenadas
+
+Editar en `delivery-loader.js`:
+
+```javascript
+getRandomLatitude() {
+    return 19.4326 + (Math.random() - 0.5) * 0.36; // CDMX
+}
+
+getRandomLongitude() {
+    return -99.1332 + (Math.random() - 0.5) * 0.36;
+}
+```
+
+## 📞 Soporte
+
+- Revisar `docs/DELIVERY_ORDERS_LOADER.md` para documentación completa
+- Ver `test/test-delivery-loader.js` para ejemplos de cada función
+- Consultar `delivery-orders.html` para interfaz web
+
+## ✅ Checklist de Implementación
+
+- [x] Crear DeliveryLoader class
+- [x] Crear DeliveryOrdersAPI class
+- [x] Crear interfaz web delivery-orders.html
+- [x] Crear suite de pruebas (15 tests)
+- [x] Integrar con DeliveryCard
+- [x] Agregar scripts a index.html
+- [x] Documentación completa
+- [x] Quick start guide
+
+## 🚀 Next Steps
+
+1. Actualizar datos con Odoo real
+2. Integrar con mapa (Leaflet)
+3. Auto-asignación de conductores
+4. Notificaciones en tiempo real
+5. Reporte PDF
+
+---
+
+**¡Listo! 🎉 Sistema de entregas funcional**
