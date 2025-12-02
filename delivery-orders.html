@@ -363,8 +363,11 @@
                 <button class="btn-primary" id="loadBtn">
                     <span>⬇️</span> Cargar desde Odoo
                 </button>
-                <button class="btn-success" id="refreshBtn">
+                <button class="btn-success" id="refreshBtn" title="Auto-refresh cada 30s">
                     <span>🔄</span> Actualizar
+                </button>
+                <button class="btn-secondary" id="demoBtn">
+                    <span>📊</span> Cargar Ejemplos
                 </button>
             </div>
         </div>
@@ -410,7 +413,18 @@
         // Inicializar
         async function init() {
             loader = new DeliveryLoader(null); // Sin Odoo connector por ahora
+            
+            // Cargar entregas automáticamente
+            showMessage('⏳ Cargando entregas automáticamente...', 'info');
             await loadDeliveries();
+            
+            // Auto-refresh cada 30 segundos
+            setInterval(async () => {
+                console.log('🔄 Actualizando entregas...');
+                await loader.loadDeliveries();
+                renderDeliveries(loader.deliveries);
+                updateStatistics();
+            }, 30000);
         }
 
         // Cargar entregas desde órdenes
@@ -533,10 +547,21 @@
 
         // Event listeners
         document.getElementById('loadBtn').addEventListener('click', loadDeliveries);
+        
         document.getElementById('refreshBtn').addEventListener('click', () => {
             renderDeliveries(loader.deliveries);
             updateStatistics();
-            showMessage('✅ Entregas actualizado', 'success');
+            showMessage('✅ Entregas actualizadas', 'success');
+        });
+
+        document.getElementById('demoBtn').addEventListener('click', async () => {
+            showMessage('📊 Cargando datos de demostración...', 'info');
+            loader = new DeliveryLoader(null);
+            await loader.loadDeliveries();
+            renderDeliveries(loader.deliveries);
+            renderOrders(loader.orders);
+            updateStatistics();
+            showMessage(`✅ ${loader.deliveries.length} entregas de demostración cargadas`, 'success');
         });
 
         document.getElementById('stateFilter').addEventListener('change', applyFilters);
