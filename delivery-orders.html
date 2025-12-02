@@ -429,7 +429,11 @@
                 </div>
                 <div class="form-group">
                     <label>Dirección de Entrega</label>
-                    <input type="text" id="deliveryLocation" placeholder="Dirección completa" required>
+                    <select id="deliveryLocation" required>
+                        <option value="">-- Seleccionar ubicación --</option>
+                    </select>
+                    <small id="locationDistance" style="color: #667eea; margin-top: 5px;"></small>
+                    <small id="locationPrice" style="color: #10b981; margin-top: 5px;"></small>
                 </div>
                 <div class="form-row">
                     <div class="form-group">
@@ -449,6 +453,10 @@
                             <option value="high">🔴 Alta</option>
                         </select>
                     </div>
+                    <div class="form-group">
+                        <label>Precio Envío</label>
+                        <input type="text" id="shippingPrice" readonly placeholder="$0.00">
+                    </div>
                 </div>
                 <div class="form-group">
                     <label>Notas Adicionales</label>
@@ -456,6 +464,7 @@
                 </div>
                 <div class="modal-actions">
                     <button type="submit" class="btn-success">✓ Crear Entrega</button>
+                    <button type="button" class="btn-warning" id="viewMapBtn">📍 Ver Ruta</button>
                     <button type="button" class="btn-secondary" id="cancelModalBtn">✗ Cancelar</button>
                 </div>
             </form>
@@ -594,15 +603,48 @@
         }
     </style>
 
+    <!-- Modal Mapa de Ruta -->
+    <div id="routeMapModal" class="modal" style="display: none;">
+        <div class="modal-content" style="max-width: 900px; width: 95%;">
+            <div class="modal-header">
+                <h2>📍 Visualización de Ruta</h2>
+                <button class="modal-close" id="closeMapModalBtn">&times;</button>
+            </div>
+            <div id="deliveryMap" style="height: 500px; border-radius: 8px; border: 2px solid #ddd;"></div>
+            <div style="margin-top: 20px; padding: 15px; background: #f9f9f9; border-radius: 8px;">
+                <h3 style="margin-top: 0;">📊 Información de Ruta</h3>
+                <div id="routeInfo" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; font-size: 0.95em;">
+                    <div><strong>Distancia:</strong> <span id="routeDistance">0 km</span></div>
+                    <div><strong>Precio Envío:</strong> <span id="routePrice">$0.00</span></div>
+                    <div><strong>Horario Pico:</strong> <span id="routeRushHour">No</span></div>
+                    <div><strong>Puntos Ruta:</strong> <span id="routePoints">0</span></div>
+                </div>
+            </div>
+            <div class="modal-actions" style="margin-top: 20px;">
+                <button type="button" class="btn-primary" id="animateRouteBtn">▶️ Animar Conductor</button>
+                <button type="button" class="btn-secondary" id="closeMapModalBtn2">Cerrar</button>
+            </div>
+        </div>
+    </div>
+
     <script src="/scripts/utils/delivery-card.js"></script>
+    <script src="/scripts/delivery/shipping-calculator.js"></script>
+    <script src="/scripts/delivery/route-map-visualizer.js"></script>
     <script src="/scripts/delivery/delivery-loader.js"></script>
     <script>
         let loader = null;
         let deliveryCards = [];
+        let shippingCalc = null;
+        let routeMapVisualizer = null;
+        let currentRoute = null;
 
         // Inicializar
         async function init() {
             loader = new DeliveryLoader(null); // Sin Odoo connector por ahora
+            shippingCalc = new ShippingCalculator(); // Calculadora de envíos
+            
+            // Llenar select de ubicaciones
+            populateLocations();
             
             // Cargar entregas automáticamente
             showMessage('⏳ Cargando entregas automáticamente...', 'info');
@@ -615,6 +657,43 @@
                 renderDeliveries(loader.deliveries);
                 updateStatistics();
             }, 30000);
+        }
+
+        /**
+         * Llena el select de ubicaciones
+         */
+        function populateLocations() {
+            const select = document.getElementById('deliveryLocation');
+            const locations = shippingCalc.getLocations();
+            
+            locations.forEach(loc => {
+                const option = document.createElement('option');
+                option.value = loc.id;
+                option.textContent = `📍 ${loc.nombre}`;
+                select.appendChild(option);
+            });
+        }
+
+        /**
+         * Calcula y muestra precio de envío
+         */
+        function calculateShippingPrice() {
+            const locationId = parseInt(document.getElementById('deliveryLocation').value);
+            
+            if (!locationId) {
+                document.getElementById('locationDistance').textContent = '';
+                document.getElementById('locationPrice').textContent = '';
+                document.getElementById('shippingPrice').value = '';
+                return;
+            }
+
+            const result = shippingCalc.calculateFromHQ(locationId, false);
+            
+            if (result) {
+                document.getElementById('locationDistance').textContent = `📏 Distancia: ${result.distance} km`;
+                document.getElementById('locationPrice').textContent = `💰 Precio: $${result.price.toFixed(2)}`;
+                document.getElementById('shippingPrice').value = `$${result.price.toFixed(2)}`;
+            }
         }
 
         // Cargar entregas desde órdenes
@@ -827,6 +906,69 @@
             newDeliveryForm.reset();
 
             console.log('✅ Nueva entrega creada:', newDelivery);
+        });
+
+        // Cambio de ubicación - Calcular precio
+        document.getElementById('deliveryLocation').addEventListener('change', calculateShippingPrice);
+
+        // Botón Ver Ruta
+        document.getElementById('viewMapBtn').addEventListener('click', () => {
+            const locationId = parseInt(document.getElementById('deliveryLocation').value);
+            const clientName = document.getElementById('clientName').value;
+            
+            if (!locationId || !clientName) {
+                showMessage('❌ Selecciona ubicación y nombre del cliente', 'error');
+                return;
+            }
+
+            // Crear mock delivery
+            const mockDelivery = {
+                id: document.getElementById('deliveryId').value,
+                cliente: clientName
+            };
+
+            // Cerrar modal de entrega y abrir modal de mapa
+            modal.style.display = 'none';
+            document.getElementById('routeMapModal').style.display = 'flex';
+
+            // Esperar a que el DOM esté listo
+            setTimeout(() => {
+                if (routeMapVisualizer) {
+                    routeMapVisualizer.destroy();
+                }
+
+                routeMapVisualizer = new RouteMapVisualizer('deliveryMap', 12);
+                currentRoute = routeMapVisualizer.visualizeDelivery(mockDelivery, locationId);
+
+                // Mostrar información de ruta
+                const result = shippingCalc.calculateFromHQ(locationId, false);
+                document.getElementById('routeDistance').textContent = `${result.distance} km`;
+                document.getElementById('routePrice').textContent = `$${result.price.toFixed(2)}`;
+                document.getElementById('routeRushHour').textContent = result.isRushHour ? 'Sí' : 'No';
+                document.getElementById('routePoints').textContent = currentRoute.length;
+            }, 100);
+        });
+
+        // Cerrar modal de mapa
+        document.getElementById('closeMapModalBtn').addEventListener('click', () => {
+            document.getElementById('routeMapModal').style.display = 'none';
+            if (routeMapVisualizer) {
+                routeMapVisualizer.destroy();
+            }
+        });
+
+        document.getElementById('closeMapModalBtn2').addEventListener('click', () => {
+            document.getElementById('routeMapModal').style.display = 'none';
+            if (routeMapVisualizer) {
+                routeMapVisualizer.destroy();
+            }
+        });
+
+        // Animar conductor
+        document.getElementById('animateRouteBtn').addEventListener('click', () => {
+            if (currentRoute) {
+                routeMapVisualizer.animateDriver(currentRoute, 'Conductor RSExpress', 300);
+            }
         });
 
         // Inicializar al cargar
