@@ -369,6 +369,9 @@
                 <button class="btn-secondary" id="demoBtn">
                     <span>📊</span> Cargar Ejemplos
                 </button>
+                <button class="btn-warning" id="newBtn">
+                    <span>➕</span> Nueva Entrega
+                </button>
             </div>
         </div>
 
@@ -403,6 +406,193 @@
         <h2 style="color: white; margin-bottom: 20px;">📦 Entregas Generadas</h2>
         <div class="grid-container" id="deliveryGrid"></div>
     </div>
+
+    <!-- Modal Nueva Entrega -->
+    <div id="newDeliveryModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>➕ Nueva Entrega</h2>
+                <button class="modal-close" id="closeModalBtn">&times;</button>
+            </div>
+            <form id="newDeliveryForm">
+                <div class="form-group">
+                    <label>ID Entrega (Autogenerado)</label>
+                    <input type="text" id="deliveryId" readonly placeholder="Se genera automáticamente">
+                </div>
+                <div class="form-group">
+                    <label>Nombre del Cliente</label>
+                    <input type="text" id="clientName" placeholder="Nombre del cliente" required>
+                </div>
+                <div class="form-group">
+                    <label>Descripción del Pedido</label>
+                    <input type="text" id="deliveryDesc" placeholder="Descripción de la entrega" required>
+                </div>
+                <div class="form-group">
+                    <label>Dirección de Entrega</label>
+                    <input type="text" id="deliveryLocation" placeholder="Dirección completa" required>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Estado</label>
+                        <select id="deliveryState" required>
+                            <option value="pending">⏳ Pendiente</option>
+                            <option value="in-transit">🚚 En tránsito</option>
+                            <option value="completed">✅ Completado</option>
+                            <option value="failed">❌ Fallido</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Prioridad</label>
+                        <select id="deliveryPriority" required>
+                            <option value="low">🟢 Baja</option>
+                            <option value="normal">🟠 Normal</option>
+                            <option value="high">🔴 Alta</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Notas Adicionales</label>
+                    <textarea id="deliveryNotes" placeholder="Notas adicionales..." rows="3"></textarea>
+                </div>
+                <div class="modal-actions">
+                    <button type="submit" class="btn-success">✓ Crear Entrega</button>
+                    <button type="button" class="btn-secondary" id="cancelModalBtn">✗ Cancelar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <style>
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            max-width: 500px;
+            width: 90%;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            animation: slideUp 0.3s ease-out;
+        }
+
+        @keyframes slideUp {
+            from { transform: translateY(50px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+
+        .modal-header h2 {
+            margin: 0;
+            color: #333;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 28px;
+            color: #999;
+            cursor: pointer;
+            padding: 0;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-close:hover {
+            color: #333;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        .form-group label {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 8px;
+            font-size: 0.95em;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            padding: 12px 15px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 1em;
+            font-family: inherit;
+            transition: border-color 0.3s;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .modal-actions {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-top: 30px;
+        }
+
+        .modal-actions button {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        @media (max-width: 576px) {
+            .modal-content {
+                width: 95%;
+                padding: 20px;
+            }
+
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+
+            .modal-actions {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
 
     <script src="/scripts/utils/delivery-card.js"></script>
     <script src="/scripts/delivery/delivery-loader.js"></script>
@@ -567,6 +757,77 @@
         document.getElementById('stateFilter').addEventListener('change', applyFilters);
         document.getElementById('priorityFilter').addEventListener('change', applyFilters);
         document.getElementById('searchInput').addEventListener('input', applyFilters);
+
+        // Modal handlers
+        const modal = document.getElementById('newDeliveryModal');
+        const newBtn = document.getElementById('newBtn');
+        const closeModalBtn = document.getElementById('closeModalBtn');
+        const cancelModalBtn = document.getElementById('cancelModalBtn');
+        const newDeliveryForm = document.getElementById('newDeliveryForm');
+        const deliveryIdInput = document.getElementById('deliveryId');
+
+        newBtn.addEventListener('click', () => {
+            // Generar nuevo ID
+            const newId = loader.generateDeliveryId();
+            deliveryIdInput.value = newId;
+            modal.style.display = 'flex';
+            document.getElementById('clientName').focus();
+        });
+
+        closeModalBtn.addEventListener('click', () => {
+            modal.style.display = 'none';
+            newDeliveryForm.reset();
+        });
+
+        cancelModalBtn.addEventListener('click', () => {
+            modal.style.display = 'none';
+            newDeliveryForm.reset();
+        });
+
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                modal.style.display = 'none';
+                newDeliveryForm.reset();
+            }
+        });
+
+        newDeliveryForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+
+            const newDelivery = {
+                id: deliveryIdInput.value,
+                cliente: document.getElementById('clientName').value,
+                descripcion: document.getElementById('deliveryDesc').value,
+                ubicacion: document.getElementById('deliveryLocation').value,
+                estado: document.getElementById('deliveryState').value,
+                prioridad: document.getElementById('deliveryPriority').value,
+                notas: document.getElementById('deliveryNotes').value || '',
+                timeline: [
+                    {
+                        timestamp: new Date(),
+                        evento: 'Entrega creada manualmente',
+                        estado: 'completed'
+                    }
+                ]
+            };
+
+            // Agregar a entregas
+            loader.deliveries.push(newDelivery);
+
+            // Actualizar UI
+            const card = new DeliveryCard(newDelivery);
+            card.mount(document.getElementById('deliveryGrid'));
+
+            // Actualizar estadísticas
+            updateStatistics();
+
+            // Mostrar mensaje y cerrar modal
+            showMessage(`✅ Entrega ${newDelivery.id} creada correctamente`, 'success');
+            modal.style.display = 'none';
+            newDeliveryForm.reset();
+
+            console.log('✅ Nueva entrega creada:', newDelivery);
+        });
 
         // Inicializar al cargar
         document.addEventListener('DOMContentLoaded', init);

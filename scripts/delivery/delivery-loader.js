@@ -8,6 +8,20 @@ class DeliveryLoader {
         this.odoo = odooConnector;
         this.deliveries = [];
         this.orders = [];
+        this.deliveryCounter = 0; // Contador para IDs autogenerados
+    }
+
+    /**
+     * Genera ID de entrega con formato RS-EN-mmdd+autoincrement
+     * Ejemplo: RS-EN-1201-001, RS-EN-1201-002, etc
+     */
+    generateDeliveryId() {
+        const now = new Date();
+        const month = String(now.getMonth() + 1).padStart(2, '0');
+        const day = String(now.getDate()).padStart(2, '0');
+        this.deliveryCounter++;
+        const counter = String(this.deliveryCounter).padStart(3, '0');
+        return `RS-EN-${month}${day}-${counter}`;
     }
 
     /**
@@ -137,8 +151,13 @@ class DeliveryLoader {
             await this.fetchOrders();
         }
 
+        // Resetear contador si es necesario
+        if (this.deliveries.length === 0) {
+            this.deliveryCounter = 0;
+        }
+
         this.deliveries = this.orders.map((order, idx) => ({
-            id: `ENT-${order.id}`,
+            id: this.generateDeliveryId(),
             orderId: order.id,
             orderName: order.nombre,
             cliente: order.cliente,
