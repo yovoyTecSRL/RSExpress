@@ -6,6 +6,314 @@
     <title>Entregas - RSExpress</title>
     <link rel="stylesheet" href="/assets/delivery-card.css">
     <link rel="stylesheet" href="/assets/delivery-cards-page.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 40px 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: white;
+            padding: 40px;
+            border-radius: 15px;
+            margin-bottom: 40px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            text-align: center;
+        }
+
+        .header h1 {
+            color: #2c3e50;
+            font-size: 48px;
+            margin-bottom: 15px;
+        }
+
+        .header p {
+            color: #7f8c8d;
+            font-size: 16px;
+            margin-bottom: 20px;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin: 30px 0;
+        }
+
+        .stat {
+            background: #f8f9fa;
+            padding: 25px;
+            border-radius: 10px;
+            border-left: 5px solid #667eea;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 36px;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+
+        .stat-label {
+            color: #7f8c8d;
+            font-size: 14px;
+            margin-top: 10px;
+        }
+
+        .controls {
+            display: flex;
+            gap: 15px;
+            margin: 30px 0;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-secondary {
+            background: white;
+            color: #2c3e50;
+            border: 2px solid #bdc3c7;
+        }
+
+        .btn-secondary:hover {
+            background: #f8f9fa;
+            border-color: #667eea;
+            color: #667eea;
+            transform: translateY(-2px);
+        }
+
+        .filter-section {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+        }
+
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .filter-group label {
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+
+        .filter-group select,
+        .filter-group input {
+            padding: 12px;
+            border: 2px solid #bdc3c7;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+
+        .filter-group select:focus,
+        .filter-group input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .delivery-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(500px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .empty-state {
+            grid-column: 1 / -1;
+            text-align: center;
+            padding: 60px 20px;
+            background: rgba(255, 255, 255, 0.5);
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+        }
+
+        .empty-state-icon {
+            font-size: 64px;
+            margin-bottom: 20px;
+        }
+
+        .empty-state h2 {
+            color: white;
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+
+        .empty-state p {
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 16px;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(3px);
+        }
+
+        .modal.show {
+            display: block;
+        }
+
+        .modal-content {
+            background-color: white;
+            margin: 5% auto;
+            padding: 40px;
+            border-radius: 15px;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .modal-close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: color 0.3s;
+        }
+
+        .modal-close:hover {
+            color: #667eea;
+        }
+
+        .modal-content h2 {
+            color: #2c3e50;
+            margin-bottom: 20px;
+        }
+
+        .modal-content form input,
+        .modal-content form select,
+        .modal-content form textarea {
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 15px;
+            border: 2px solid #bdc3c7;
+            border-radius: 8px;
+            font-size: 14px;
+            font-family: inherit;
+        }
+
+        .modal-content form input:focus,
+        .modal-content form select:focus,
+        .modal-content form textarea:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .modal-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .modal-buttons button {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .modal-buttons .btn-save {
+            background: #667eea;
+            color: white;
+        }
+
+        .modal-buttons .btn-save:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+        }
+
+        .modal-buttons .btn-cancel {
+            background: #ecf0f1;
+            color: #2c3e50;
+        }
+
+        .modal-buttons .btn-cancel:hover {
+            background: #bdc3c7;
+        }
+
+        @media (max-width: 768px) {
+            .header {
+                padding: 30px 20px;
+            }
+
+            .header h1 {
+                font-size: 32px;
+            }
+
+            .delivery-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .filter-section {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
 </head>
 <body>
     <div class="container">
@@ -97,25 +405,26 @@
             <span class="modal-close" onclick="closeModal()">&times;</span>
             <h2>➕ Nueva Entrega</h2>
             <form onsubmit="saveNewDelivery(event)">
-                <div style="margin: 15px 0;">
-                    <label>ID Entrega:</label>
-                    <input type="text" id="newId" placeholder="#1008" required style="width: 100%; padding: 8px; margin-top: 5px; border: 1px solid #bdc3c7; border-radius: 5px;">
+                <input type="text" id="newId" placeholder="ID Entrega (#1008)" required>
+                <input type="text" id="newCliente" placeholder="Nombre del cliente" required>
+                <input type="text" id="newDescripcion" placeholder="Descripción del pedido" required>
+                <input type="text" id="newUbicacion" placeholder="Dirección de entrega" required>
+                <select id="newEstado">
+                    <option value="pending">Pendiente</option>
+                    <option value="in-transit">En Tránsito</option>
+                    <option value="completed">Entregada</option>
+                    <option value="failed">Fallida</option>
+                </select>
+                <select id="newPrioridad">
+                    <option value="normal">Normal</option>
+                    <option value="high">Alta</option>
+                    <option value="low">Baja</option>
+                </select>
+                <textarea id="newNotas" placeholder="Notas adicionales..." style="resize: vertical; min-height: 80px;"></textarea>
+                <div class="modal-buttons">
+                    <button type="submit" class="btn-save">✅ Crear Entrega</button>
+                    <button type="button" class="btn-cancel" onclick="closeModal()">❌ Cancelar</button>
                 </div>
-                <div style="margin: 15px 0;">
-                    <label>Cliente:</label>
-                    <input type="text" id="newCliente" placeholder="Nombre del cliente" required style="width: 100%; padding: 8px; margin-top: 5px; border: 1px solid #bdc3c7; border-radius: 5px;">
-                </div>
-                <div style="margin: 15px 0;">
-                    <label>Descripción:</label>
-                    <input type="text" id="newDescripcion" placeholder="Descripción del pedido" required style="width: 100%; padding: 8px; margin-top: 5px; border: 1px solid #bdc3c7; border-radius: 5px;">
-                </div>
-                <div style="margin: 15px 0;">
-                    <label>Ubicación:</label>
-                    <input type="text" id="newUbicacion" placeholder="Dirección de entrega" required style="width: 100%; padding: 8px; margin-top: 5px; border: 1px solid #bdc3c7; border-radius: 5px;">
-                </div>
-                <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 20px;">
-                    ✅ Crear Entrega
-                </button>
             </form>
         </div>
     </div>
@@ -140,10 +449,10 @@
                     prioridad: 'normal',
                     notas: 'Llamar 30 min antes de llegar',
                     timeline: [
-                        { label: 'Orden creada', time: '10:30 AM', completed: true },
-                        { label: 'En almacén', time: '11:00 AM', completed: true },
-                        { label: 'Asignada a conductor', time: 'Pendiente', completed: false },
-                        { label: 'Entregada', time: 'Pendiente', completed: false }
+                        { evento: 'Orden creada', timestamp: new Date(Date.now() - 3600000), estado: 'completed' },
+                        { evento: 'En almacén', timestamp: new Date(Date.now() - 1800000), estado: 'completed' },
+                        { evento: 'Asignada a conductor', timestamp: null, estado: 'pending' },
+                        { evento: 'Entregada', timestamp: null, estado: 'pending' }
                     ]
                 },
                 {
@@ -153,7 +462,13 @@
                     ubicacion: 'Paseo de la Reforma, CDMX',
                     estado: 'in-transit',
                     prioridad: 'high',
-                    notas: 'Requiere firma del cliente'
+                    notas: 'Requiere firma del cliente',
+                    timeline: [
+                        { evento: 'Orden creada', timestamp: new Date(Date.now() - 7200000), estado: 'completed' },
+                        { evento: 'En almacén', timestamp: new Date(Date.now() - 5400000), estado: 'completed' },
+                        { evento: 'Asignada a conductor', timestamp: new Date(Date.now() - 1800000), estado: 'completed' },
+                        { evento: 'En ruta', timestamp: new Date(Date.now() - 600000), estado: 'completed' }
+                    ]
                 },
                 {
                     id: '#1009',
@@ -163,10 +478,10 @@
                     estado: 'completed',
                     prioridad: 'normal',
                     timeline: [
-                        { label: 'Orden creada', time: '08:00 AM', completed: true },
-                        { label: 'En almacén', time: '08:30 AM', completed: true },
-                        { label: 'Asignada a conductor', time: '09:00 AM', completed: true },
-                        { label: 'Entregada', time: '14:30 PM', completed: true }
+                        { evento: 'Orden creada', timestamp: new Date(Date.now() - 14400000), estado: 'completed' },
+                        { evento: 'En almacén', timestamp: new Date(Date.now() - 13200000), estado: 'completed' },
+                        { evento: 'Asignada a conductor', timestamp: new Date(Date.now() - 12000000), estado: 'completed' },
+                        { evento: 'Entregada', timestamp: new Date(Date.now() - 3600000), estado: 'completed' }
                     ]
                 },
                 {
@@ -176,7 +491,13 @@
                     ubicacion: 'Colonia Industrial, Guadalajara',
                     estado: 'failed',
                     prioridad: 'high',
-                    notas: 'Cliente no estaba disponible - Reintentar mañana'
+                    notas: 'Cliente no estaba disponible - Reintentar mañana',
+                    timeline: [
+                        { evento: 'Orden creada', timestamp: new Date(Date.now() - 86400000), estado: 'completed' },
+                        { evento: 'En almacén', timestamp: new Date(Date.now() - 82800000), estado: 'completed' },
+                        { evento: 'Asignada a conductor', timestamp: new Date(Date.now() - 79200000), estado: 'completed' },
+                        { evento: 'Intento de entrega fallido', timestamp: new Date(Date.now() - 7200000), estado: 'completed' }
+                    ]
                 },
                 {
                     id: '#1011',
@@ -185,6 +506,12 @@
                     ubicacion: 'Puerto de Veracruz',
                     estado: 'in-transit',
                     prioridad: 'low',
+                    timeline: [
+                        { evento: 'Orden creada', timestamp: new Date(Date.now() - 172800000), estado: 'completed' },
+                        { evento: 'En almacén', timestamp: new Date(Date.now() - 168000000), estado: 'completed' },
+                        { evento: 'Asignada a conductor', timestamp: new Date(Date.now() - 7200000), estado: 'completed' },
+                        { evento: 'En ruta', timestamp: new Date(Date.now() - 3600000), estado: 'completed' }
+                    ]
                 },
                 {
                     id: '#1012',
@@ -193,7 +520,13 @@
                     ubicacion: 'Coyoacán, CDMX',
                     estado: 'pending',
                     prioridad: 'high',
-                    notas: 'Entregar antes de las 6 PM'
+                    notas: 'Entregar antes de las 6 PM',
+                    timeline: [
+                        { evento: 'Orden creada', timestamp: new Date(Date.now() - 3600000), estado: 'completed' },
+                        { evento: 'En almacén', timestamp: new Date(Date.now() - 1800000), estado: 'completed' },
+                        { evento: 'Asignada a conductor', timestamp: null, estado: 'pending' },
+                        { evento: 'En ruta', timestamp: null, estado: 'pending' }
+                    ]
                 }
             ];
 
@@ -300,8 +633,14 @@
                 cliente: document.getElementById('newCliente').value,
                 descripcion: document.getElementById('newDescripcion').value,
                 ubicacion: document.getElementById('newUbicacion').value,
-                estado: 'pending',
-                prioridad: 'normal'
+                estado: document.getElementById('newEstado').value,
+                prioridad: document.getElementById('newPrioridad').value,
+                notas: document.getElementById('newNotas').value || '',
+                timeline: [{
+                    timestamp: new Date(),
+                    evento: 'Entrega creada',
+                    estado: 'completed'
+                }]
             };
 
             deliveries.push(newDelivery);

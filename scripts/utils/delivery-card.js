@@ -42,58 +42,67 @@ class DeliveryCard {
                 </div>
             </div>
 
-            <!-- Body -->
+            <!-- Body - 2 Columns: Left (Info) & Right (Timeline) -->
             <div class="delivery-body">
-                <!-- Descripción -->
-                <div class="delivery-item">
-                    <div class="delivery-item-icon">📋</div>
-                    <div class="delivery-item-content">
-                        <div class="delivery-item-label">Descripción</div>
-                        <div class="delivery-item-value">${this.data.descripcion}</div>
-                    </div>
-                </div>
-
-                <!-- Ubicación -->
-                <div class="delivery-item">
-                    <div class="delivery-item-icon">📍</div>
-                    <div class="delivery-item-content">
-                        <div class="delivery-item-label">Punto de Entrega</div>
-                        <div class="delivery-item-value">
-                            <strong>${this.data.ubicacion}</strong>
+                <!-- Left Column: Information -->
+                <div class="delivery-body-left">
+                    <!-- Descripción -->
+                    <div class="delivery-item">
+                        <div class="delivery-item-icon">📋</div>
+                        <div class="delivery-item-content">
+                            <div class="delivery-item-label">Descripción</div>
+                            <div class="delivery-item-value">${this.data.descripcion}</div>
                         </div>
                     </div>
-                </div>
 
-                <!-- Estado -->
-                <div class="delivery-item">
-                    <div class="delivery-item-icon">⏱️</div>
-                    <div class="delivery-item-content">
-                        <div class="delivery-item-label">Estado</div>
-                        <div class="delivery-item-value">
-                            ${this.getEstadoFormateado()}
+                    <!-- Ubicación -->
+                    <div class="delivery-item">
+                        <div class="delivery-item-icon">📍</div>
+                        <div class="delivery-item-content">
+                            <div class="delivery-item-label">Punto de Entrega</div>
+                            <div class="delivery-item-value">
+                                <strong>${this.data.ubicacion}</strong>
+                            </div>
                         </div>
                     </div>
-                </div>
 
-                <!-- Prioridad -->
-                <div class="delivery-item">
-                    <div class="delivery-item-icon">⚡</div>
-                    <div class="delivery-item-content">
-                        <div class="delivery-item-label">Prioridad</div>
-                        <div class="delivery-item-value">
-                            <span class="delivery-priority-indicator"></span>
-                            ${this.getPrioridadFormateada()}
+                    <!-- Estado -->
+                    <div class="delivery-item">
+                        <div class="delivery-item-icon">⏱️</div>
+                        <div class="delivery-item-content">
+                            <div class="delivery-item-label">Estado</div>
+                            <div class="delivery-item-value">
+                                ${this.getEstadoFormateado()}
+                            </div>
                         </div>
                     </div>
+
+                    <!-- Prioridad -->
+                    <div class="delivery-item">
+                        <div class="delivery-item-icon">⚡</div>
+                        <div class="delivery-item-content">
+                            <div class="delivery-item-label">Prioridad</div>
+                            <div class="delivery-item-value">
+                                <span class="delivery-priority-indicator"></span>
+                                ${this.getPrioridadFormateada()}
+                            </div>
+                        </div>
+                    </div>
+
+                    ${this.data.notas ? `
+                        <div class="delivery-notes">
+                            <strong>📝 Notas:</strong><br>${this.data.notas}
+                        </div>
+                    ` : ''}
                 </div>
 
-                ${this.data.notas ? `
-                    <div class="delivery-notes">
-                        <strong>📝 Notas:</strong><br>${this.data.notas}
+                <!-- Right Column: Timeline/Historial -->
+                <div class="delivery-body-right">
+                    <div class="delivery-timeline-section">
+                        <strong style="display: block; margin-bottom: 12px; color: #333; font-size: 13px;">Historial:</strong>
+                        ${this.renderTimelineItems()}
                     </div>
-                ` : ''}
-
-                ${this.data.timeline ? this.renderTimeline() : ''}
+                </div>
             </div>
 
             <!-- Footer -->
@@ -183,7 +192,39 @@ class DeliveryCard {
     }
 
     /**
-     * Renderiza la línea de tiempo
+     * Renderiza los items del timeline para la columna derecha
+     */
+    renderTimelineItems() {
+        if (!Array.isArray(this.data.timeline) || this.data.timeline.length === 0) {
+            return `
+                <div class="timeline-item-empty" style="padding: 8px; color: #999; font-size: 12px;">
+                    Sin historial
+                </div>
+            `;
+        }
+
+        return this.data.timeline.map((item, index) => {
+            const isCompleted = item.estado === 'completed' || item.completed;
+            const icon = isCompleted ? '●' : '○';
+            const timestamp = item.timestamp ? new Date(item.timestamp).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }) : '';
+            const evento = item.evento || item.label || 'Evento';
+
+            return `
+                <div class="timeline-item ${isCompleted ? 'completed' : 'pending'}" style="display: flex; margin-bottom: 12px; gap: 8px;">
+                    <div style="color: ${isCompleted ? '#10b981' : '#cbd5e0'}; font-size: 14px; margin-top: 2px; flex-shrink: 0;">
+                        ${icon}
+                    </div>
+                    <div style="flex: 1;">
+                        <div style="font-size: 12px; color: #333; font-weight: 500;">${evento}</div>
+                        ${timestamp ? `<div style="font-size: 11px; color: #999;">${timestamp}</div>` : ''}
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+
+    /**
+     * Renderiza la línea de tiempo (versión antigua, mantenida por compatibilidad)
      */
     renderTimeline() {
         if (!Array.isArray(this.data.timeline) || this.data.timeline.length === 0) {
