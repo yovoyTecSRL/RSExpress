@@ -33,83 +33,75 @@ class DeliveryCard {
                 <div class="delivery-number">
                     <div class="delivery-number-badge">📦</div>
                     <div>
-                        <div class="delivery-id">${this.data.id}</div>
-                        <small style="color: #95a5a6;">${this.data.cliente || 'Cliente'}</small>
+                        <span class="delivery-id">${this.data.id}</span>
+                        <span class="delivery-description">${this.data.descripcion}</span>
                     </div>
                 </div>
                 <div class="delivery-status-badge ${statusClass}">
                     ${this.getStatusText()}
                 </div>
+                <div style="padding: 6px 12px 0 12px;/* border-bottom: 1px solid #f0f0f0; */margin-bottom: 0;">
+                    <span style="font-size: 10px; color: #999; display: inline; margin-right: 4px; line-height: 1.1;">👤</span>
+                    <span style="font-size: 12px; font-weight: 600; color: #2c3e50; display: inline; line-height: 1.1;">
+                        ${this.data.cliente || 'Sin cliente'}
+                    </span>
+                </div>
             </div>
 
-            <!-- Body - 2 Columns: Left (Info) & Right (Timeline) -->
+            <!-- Delivery Body - 2 Columns -->
             <div class="delivery-body">
-                <!-- Left Column: Information -->
+                <!-- Left Column: Ubicaciones -->
                 <div class="delivery-body-left">
-                    <!-- Descripción -->
-                    <div class="delivery-item">
-                        <div class="delivery-item-icon">📋</div>
-                        <div class="delivery-item-content">
-                            <div class="delivery-item-label">Descripción</div>
-                            <div class="delivery-item-value">${this.data.descripcion}</div>
+                    <!-- Punto de Retiro -->
+                    ${this.data.puntoRetiro ? `
+                        <div class="location-item">
+                            <span class="location-label">🏪</span>
+                            <span class="location-value">${this.data.puntoRetiro}</span>
                         </div>
-                    </div>
+                    ` : ''}
 
-                    <!-- Ubicación -->
-                    <div class="delivery-item">
-                        <div class="delivery-item-icon">📍</div>
-                        <div class="delivery-item-content">
-                            <div class="delivery-item-label">Punto de Entrega</div>
-                            <div class="delivery-item-value">
-                                <strong>${this.data.ubicacion}</strong>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Estado -->
-                    <div class="delivery-item">
-                        <div class="delivery-item-icon">⏱️</div>
-                        <div class="delivery-item-content">
-                            <div class="delivery-item-label">Estado</div>
-                            <div class="delivery-item-value">
-                                ${this.getEstadoFormateado()}
-                            </div>
-                        </div>
+                    <!-- Punto de Entrega -->
+                    <div class="location-item">
+                        <span class="location-label">📍</span>
+                        <span class="location-value">${this.data.ubicacion}</span>
                     </div>
 
                     <!-- Prioridad -->
-                    <div class="delivery-item">
-                        <div class="delivery-item-icon">⚡</div>
-                        <div class="delivery-item-content">
-                            <div class="delivery-item-label">Prioridad</div>
-                            <div class="delivery-item-value">
-                                <span class="delivery-priority-indicator"></span>
-                                ${this.getPrioridadFormateada()}
-                            </div>
-                        </div>
+                    <div class="location-item">
+                        <span class="location-label">⚡</span>
+                        <span class="location-value">${this.getPrioridadFormateada()}</span>
                     </div>
-
-                    ${this.data.notas ? `
-                        <div class="delivery-notes">
-                            <strong>📝 Notas:</strong><br>${this.data.notas}
-                        </div>
-                    ` : ''}
+                    <div class="delivery-notes">
+                        ${this.data.notas ? `<strong>📝 Notas:</strong><span>${this.data.notas}</span>` : ''}
+                    </div>
                 </div>
 
-                <!-- Right Column: Timeline/Historial -->
+                <!-- Right Column: Historial y Costo -->
                 <div class="delivery-body-right">
-                    <div class="delivery-timeline-section">
-                        <strong style="display: block; margin-bottom: 12px; color: #333; font-size: 13px;">Historial:</strong>
+                    <!-- Historial -->
+                    <div class="historial-section">
+                        <span class="historial-title">Historial:</span>
                         ${this.renderTimelineItems()}
+                    </div>
+
+                    <!-- Costo -->
+                    <div class="cost-box">
+                        ${this.data.distancia ? `<span class="cost-distance">📏 ${this.data.distancia}km</span>` : ''}
+                        <span class="cost-value">${this.data.costo || '₡--'}</span>
                     </div>
                 </div>
             </div>
 
-            <!-- Footer -->
+            <!-- Footer con Botones -->
             <div class="delivery-footer">
                 ${this.getActionButtons()}
             </div>
         `;
+
+        // Después de crear el elemento, inicializar el mapa
+        setTimeout(() => {
+            this.initializeMap();
+        }, 100);
 
         return this.element;
     }
@@ -149,7 +141,7 @@ class DeliveryCard {
             'pending': 'Pendiente',
             'in-transit': 'En Tránsito',
             'completed': 'Entregada',
-            'failed': 'Fallida'
+            'failed': 'No Entregada'
         };
         return texts[this.getStateClass()] || 'Pendiente';
     }
@@ -183,9 +175,9 @@ class DeliveryCard {
     getPrioridadFormateada() {
         const priorities = {
             'normal': 'Normal',
-            'alta': 'Alta',
+            'alta': 'Urgente',
             'baja': 'Baja',
-            'high': 'Alta',
+            'high': 'Urgente',
             'low': 'Baja'
         };
         return priorities[this.data.prioridad?.toLowerCase()] || 'Normal';
@@ -291,6 +283,13 @@ class DeliveryCard {
             `;
         }
 
+        // Agregar botón Ver Ruta en todos los estados
+        buttons += `
+            <button class="delivery-button route-btn" onclick="showRouteModal('${this.data.id}', '${this.data.cliente}', '${this.data.ubicacion}')">
+                🗺️ Ver Ruta
+            </button>
+        `;
+
         return buttons;
     }
 
@@ -347,6 +346,174 @@ ${this.data.notas ? `\nNotas: ${this.data.notas}` : ''}
             const card = new DeliveryCard(delivery);
             container.appendChild(card.render());
         });
+    }
+
+    /**
+     * Inicializa el mapa Leaflet para la entrega
+     */
+    initializeMap() {
+        // Coordenadas de destino
+        const destLat = this.data.lat || 9.3833;
+        const destLng = this.data.lng || -83.7333;
+        
+        // Generar coordenadas de origen cercanas (punto de retiro)
+        const originLat = destLat + (Math.random() * 0.02 - 0.01);
+        const originLng = destLng + (Math.random() * 0.02 - 0.01);
+        
+        const mapId = `map-${this.data.id}`;
+        const mapContainer = document.getElementById(mapId);
+        
+        if (!mapContainer) {
+            console.warn(`Map container ${mapId} not found`);
+            return;
+        }
+
+        try {
+            // Crear mapa centrado entre origen y destino
+            const centerLat = (originLat + destLat) / 2;
+            const centerLng = (originLng + destLng) / 2;
+            
+            const map = L.map(mapId).setView([centerLat, centerLng], 12);
+            
+            // Agregar tiles de OpenStreetMap
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap contributors',
+                maxZoom: 19
+            }).addTo(map);
+            
+            // Marcador de ORIGEN (Punto de Retiro) - Verde
+            const originMarker = L.marker([originLat, originLng], {
+                icon: L.icon({
+                    iconUrl: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHBhdGggZmlsbD0iIzI3YWU2MCIgZD0iTTEyIDJDNi40OCAyIDIgNi40OCAyIDEyYzAgNy4yIDEwIDIwIDEwIDIwczEwLTEyLjggMTAtMjBjMC01LjUyLTQuNDgtMTAtMTAtMTB6bTAgMTVjLTIuNzYgMC01LTIuMjQtNS01czIuMjQtNSA1LTUgNSAyLjI0IDUgNS0yLjI0IDUtNSA1eiIvPjwvc3ZnPg==',
+                    iconSize: [32, 32],
+                    iconAnchor: [16, 32],
+                    popupAnchor: [0, -32]
+                })
+            }).addTo(map);
+            
+            originMarker.bindPopup(`
+                <strong style="color: #27ae60;">🏪 Origen</strong><br>
+                ${this.data.puntoRetiro || 'Punto de Retiro'}<br>
+                <small style="color: #666;">Lat: ${originLat.toFixed(4)}</small><br>
+                <small style="color: #666;">Lng: ${originLng.toFixed(4)}</small>
+            `);
+            
+            // Marcador de DESTINO (Punto de Entrega) - Azul
+            const destMarker = L.marker([destLat, destLng], {
+                icon: L.icon({
+                    iconUrl: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHBhdGggZmlsbD0iIzI5ODBiOSIgZD0iTTEyIDJDNi40OCAyIDIgNi40OCAyIDEyYzAgNy4yIDEwIDIwIDEwIDIwczEwLTEyLjggMTAtMjBjMC01LjUyLTQuNDgtMTAtMTAtMTB6bTAgMTVjLTIuNzYgMC01LTIuMjQtNS01czIuMjQtNSA1LTUgNSAyLjI0IDUgNS0yLjI0IDUtNSA1eiIvPjwvc3ZnPg==',
+                    iconSize: [32, 32],
+                    iconAnchor: [16, 32],
+                    popupAnchor: [0, -32]
+                })
+            }).addTo(map);
+            
+            destMarker.bindPopup(`
+                <strong style="color: #2980b9;">📍 Destino</strong><br>
+                ${this.data.ubicacion}<br>
+                <small style="color: #666;">Lat: ${destLat.toFixed(4)}</small><br>
+                <small style="color: #666;">Lng: ${destLng.toFixed(4)}</small>
+            `);
+            
+            // Crear línea de ruta principal con estilo de trafficway mejorado
+            const routeLine = L.polyline(
+                [[originLat, originLng], [destLat, destLng]],
+                {
+                    color: '#667eea',
+                    weight: 7,
+                    opacity: 0.9,
+                    dashArray: '0',
+                    lineCap: 'round',
+                    lineJoin: 'round',
+                    className: 'route-line-animated'
+                }
+            ).addTo(map);
+            
+            // Añadir efecto de brillo/sombra a la ruta con gradiente
+            const shadowLine = L.polyline(
+                [[originLat, originLng], [destLat, destLng]],
+                {
+                    color: '#667eea',
+                    weight: 14,
+                    opacity: 0.15,
+                    dashArray: '0',
+                    lineCap: 'round',
+                    lineJoin: 'round'
+                }
+            ).addTo(map);
+            
+            // Añadir línea interior de contraste
+            const innerLine = L.polyline(
+                [[originLat, originLng], [destLat, destLng]],
+                {
+                    color: '#fff',
+                    weight: 3,
+                    opacity: 0.4,
+                    dashArray: '5, 5',
+                    lineCap: 'round',
+                    lineJoin: 'round'
+                }
+            ).addTo(map);
+            
+            // Calcular distancia aproximada en km (usando Haversine formula)
+            const distance = this.calculateDistance(originLat, originLng, destLat, destLng);
+            const duration = Math.ceil(distance / 40) + ' min'; // Asumiendo ~40 km/h promedio
+            
+            // Crear marcador de información de ruta en el centro
+            const routeInfoLat = (originLat + destLat) / 2;
+            const routeInfoLng = (originLng + destLng) / 2;
+            
+            const routeInfo = L.marker([routeInfoLat, routeInfoLng], {
+                icon: L.divIcon({
+                    className: 'route-info-marker',
+                    html: `
+                        <div style="
+                            background: rgba(102, 126, 234, 0.95);
+                            color: white;
+                            padding: 8px 12px;
+                            border-radius: 20px;
+                            font-weight: bold;
+                            font-size: 12px;
+                            white-space: nowrap;
+                            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+                            border: 2px solid white;
+                        ">
+                            📍 ${distance.toFixed(1)} km • ${duration}
+                        </div>
+                    `,
+                    iconSize: [120, 34],
+                    iconAnchor: [60, 17],
+                    popupAnchor: [0, -17]
+                })
+            }).addTo(map);
+            
+            // Ajustar vista para mostrar ambos marcadores
+            const group = L.featureGroup([originMarker, destMarker]);
+            map.fitBounds(group.getBounds().pad(0.15));
+            
+            // Ajustar tamaño del mapa
+            setTimeout(() => {
+                map.invalidateSize();
+            }, 200);
+            
+        } catch (error) {
+            console.error(`Error initializing map for ${mapId}:`, error);
+        }
+    }
+    
+    /**
+     * Calcula la distancia entre dos puntos usando la fórmula Haversine
+     */
+    calculateDistance(lat1, lng1, lat2, lng2) {
+        const R = 6371; // Radio terrestre en km
+        const dLat = (lat2 - lat1) * Math.PI / 180;
+        const dLng = (lng2 - lng1) * Math.PI / 180;
+        const a = 
+            Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+            Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+            Math.sin(dLng / 2) * Math.sin(dLng / 2);
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        return R * c;
     }
 
     /**

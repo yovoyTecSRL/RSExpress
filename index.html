@@ -1,21 +1,19 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RS Express - Tu servicio de delivery y mandados</title>
-    <link rel="stylesheet" href="styles.css">
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='75' font-size='75'>🚚</text></svg>" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>RSExpress - Gestión de Envíos</title>
+    <meta name="description" content="RSExpress: Sistema integral de gestión de órdenes, entregas y flotas" />
+    <meta name="theme-color" content="#007bff" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <!-- Traccar Integration -->
-    <script src="/scripts/traccar/traccar-config.js?v=20251130-001"></script>
-    <script src="/scripts/traccar/traccar.js?v=20251130-001"></script>
-    <!-- Odoo Integration V2 -->
-    <script src="/scripts/odoo/odoo-integration-v2.js?v=20251130-001"></script>
 </head>
 <body>
-    <!-- Header -->
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+</body>
+</html>
     <header class="header">
         <div class="container">
             <div class="logo">
@@ -1371,11 +1369,8 @@
                         window.driverPositioningSystem = new DriverPositioningSystem(fleetMap);
                         window.driverPositioningSystem.printStatistics();
                         
-                        console.log('✅ Sistema de Posicionamiento de Drivers Inicializado');
-                    }
-                }
-            }, 1000);
-        });
-    </script>
+<body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
 </body>
 </html>

@@ -632,9 +632,9 @@
     </div>
     
     <!-- Scripts -->
-    <script src="/scripts/odoo/odoo-connector.js?v=20251130-005"></script>
-    <script src="/scripts/odoo/order-manager.js?v=20251130-005"></script>
-    <script src="/scripts/fleet/driver-fleet-panel.js?v=20251130-005"></script>
+    <script src="./scripts/odoo/odoo-connector.js"></script>
+    <script src="./scripts/odoo/order-manager.js"></script>
+    <script src="./scripts/fleet/driver-fleet-panel.js"></script>
     <script>
         // Variables globales
         let odooConnector = null;
@@ -644,81 +644,75 @@
         /**
          * Conectar a Odoo via JSON-RPC (rsexpress.online)
          */
+        /**
+         * Conectar a Odoo usando OdooConnector mejorado
+         */
         async function connectToOdoo() {
             try {
-                document.querySelector('.btn-primary').disabled = true;
-                document.querySelector('.btn-primary').innerHTML = '<i class="fas fa-spinner fa-spin"></i> Conectando...';
+                const connectBtn = document.querySelector('.btn-primary');
+                connectBtn.disabled = true;
+                connectBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Conectando...';
                 
-                // Detectar si proxy está disponible
-                let proxyUrl = null;
-                try {
-                    const proxyTest = await fetch('http://localhost:9999/jsonrpc', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ jsonrpc: '2.0', method: 'version', params: {}, id: 0 })
-                    });
-                    if (proxyTest.ok) {
-                        proxyUrl = 'http://localhost:9999';
-                        console.log('✅ Proxy OdooProxy detectado en localhost:9999');
-                    }
-                } catch (e) {
-                    console.log('ℹ️ Proxy no disponible, usando conexión directa');
-                }
-                
-                // Crear instancia del conector con datos de rsexpress.online
+                // Crear instancia del conector (detecta proxy automáticamente)
                 odooConnector = new OdooConnector({
-                    url: proxyUrl || 'https://rsexpress.online',
                     database: 'odoo19',
                     uid: 5,
                     token: '1fc63a72dcf97e88aab89c5a8a54dc0eac25cb9b'
                 });
                 
-                // Intentar conexión
-                const connected = await odooConnector.connect();
+                console.log('[Orders CRM] 🔄 Conectando a Odoo...');
+                
+                // Usar nuevo método checkConnection()
+                const connected = await odooConnector.checkConnection();
                 
                 if (connected) {
+                    console.log('[Orders CRM] ✅ Conectado a Odoo correctamente');
+                    
                     // Crear manager de pedidos
                     orderManager = new OrderManager(odooConnector);
                     
                     // Actualizar UI
                     updateConnectionStatus(true);
+                    showAlert('success', '✅ Conectado a Odoo');
                     
-                    // Cargar leads existentes
+                    // Sincronizar usuarios y partners
+                    console.log('[Orders CRM] 📋 Sincronizando usuarios...');
+                    const { users, partners } = await odooConnector.syncUsers();
+                    console.log(`[Orders CRM] ✅ ${users.length} usuarios, ${partners.length} partners sincronizados`);
+                    
+                    // Cargar leads
                     await loadLeads();
                     
-                    // Crear un lead por defecto si no hay
-                    showAlert('info', '⏳ Verificando leads...');
-                    let leads = await odooConnector.getLeads([], 0, 1);
+                    // Verificar si hay leads
+                    const leads = await odooConnector.getLeads([], 0, 1);
                     
                     if (leads.length === 0) {
-                        console.log('📝 No hay leads, creando uno por defecto...');
+                        console.log('[Orders CRM] 📝 No hay leads, creando uno de prueba...');
                         showAlert('info', '📝 Creando lead de prueba...');
                         
                         const newLead = await odooConnector.createDefaultLead();
                         
                         if (newLead) {
-                            console.log('✅ Lead por defecto creado:', newLead);
-                            showAlert('success', '✅ Lead de prueba creado y cargado');
-                            
-                            // Recargar leads
+                            console.log('[Orders CRM] ✅ Lead de prueba creado:', newLead);
+                            showAlert('success', '✅ Lead de prueba creado');
                             await loadLeads();
                         } else {
-                            showAlert('warning', '⚠️ No se pudo crear el lead por defecto');
+                            showAlert('warning', '⚠️ No se pudo crear el lead de prueba');
                         }
-                    } else {
-                        showAlert('success', '✅ Conectado correctamente a Odoo');
                     }
                 } else {
+                    console.error('[Orders CRM] ❌ No se pudo conectar a Odoo');
                     updateConnectionStatus(false);
                     showAlert('error', '❌ No se pudo conectar a Odoo');
                 }
             } catch (error) {
-                console.error('Error:', error);
+                console.error('[Orders CRM] Error:', error);
                 updateConnectionStatus(false);
                 showAlert('error', `❌ Error: ${error.message}`);
             } finally {
-                document.querySelector('.btn-primary').disabled = false;
-                document.querySelector('.btn-primary').innerHTML = '<i class="fas fa-plug"></i> Conectar a Odoo';
+                const connectBtn = document.querySelector('.btn-primary');
+                connectBtn.disabled = false;
+                connectBtn.innerHTML = '<i class="fas fa-plug"></i> Conectar a Odoo';
             }
         }
         
@@ -978,8 +972,13 @@
             setTimeout(() => alertDiv.remove(), 5000);
         }
         
-        // Inicializar
-        console.log('✅ Página de gestión de pedidos cargada');
+        // Inicializar cuando el DOM esté listo
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('[Orders CRM] 🚀 Página cargada, conectando automáticamente a Odoo...');
+            connectToOdoo();
+        });
+        
+        console.log('✅ Página de gestión de pedidos inicializada');
     </script>
 </body>
 </html>

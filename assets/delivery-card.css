@@ -20,19 +20,19 @@
    ============================================ */
 
 .delivery-card {
-    background: white;
+    background: rgba(255, 255, 255, 0.8) !important;
     border-radius: 12px;
     overflow: hidden;
     box-shadow: var(--delivery-shadow);
     transition: all 0.3s ease;
     border-left: 5px solid;
-    margin-bottom: 20px;
+    margin-bottom: 12px;
     max-width: 100vw;
 }
 
 .delivery-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+    transform: translateY(-3px);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12);
 }
 
 /* Estados de entrega - Borde de color */
@@ -64,7 +64,7 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 20px;
+    padding: 8px;
     background: linear-gradient(90deg, #f8f9fa 0%, #ffffff 100%);
     border-bottom: 1px solid #e9ecef;
 }
@@ -78,33 +78,42 @@
 .delivery-number-badge {
     background: var(--delivery-primary);
     color: white;
-    width: 45px;
-    height: 45px;
+    width: 38px;
+    height: 38px;
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
     font-weight: bold;
-    font-size: 18px;
+    font-size: 14px;
     box-shadow: 0 2px 8px rgba(255, 107, 53, 0.3);
 }
 
 .delivery-id {
-    font-size: 14px;
-    font-weight: 600;
+    font-size: 11px;
+    font-weight: 700;
     color: var(--delivery-dark);
+    line-height: 1.05;
+}
+
+.delivery-description {
+    font-size: 9px;
+    color: #999;
+    display: block;
+    line-height: 1.05;
+    margin-top: 1px;
 }
 
 .delivery-status-badge {
     display: flex;
     align-items: center;
-    gap: 8px;
-    padding: 8px 16px;
+    gap: 6px;
+    padding: 6px 12px;
     border-radius: 20px;
-    font-size: 12px;
+    font-size: 10px;
     font-weight: 600;
     text-transform: uppercase;
-    letter-spacing: 0.5px;
+    letter-spacing: 0.3px;
 }
 
 /* Estados - Badge */
@@ -162,27 +171,28 @@
    ============================================ */
 
 .delivery-body {
-    padding: 20px;
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 20px;
+    padding: 0 12px 8px 12px;
+    display: flex;
+    flex-direction: row;
+    gap: 12px;
     border-bottom: 1px solid #ecf0f1;
 }
 
 .delivery-body-left {
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: 10px;
+    align-items: baseline;
 }
 
 .delivery-body-right {
     display: flex;
-    flex-direction: column;
-    gap: 8px;
+    flex-direction: row;
+    gap: 12px;
+    align-items: center;
     border-left: 2px solid #ecf0f1;
-    padding-left: 15px;
-    max-height: 280px;
-    overflow-y: auto;
+    padding-left: 12px;
+    flex: 1;
 }
 
 .delivery-body-right::-webkit-scrollbar {
@@ -223,10 +233,10 @@
 }
 
 .delivery-item {
-    margin-bottom: 12px;
+    margin-bottom: 8px;
     display: flex;
-    gap: 12px;
-    font-size: 13px;
+    gap: 8px;
+    font-size: 11px;
 }
 
 .delivery-item:last-child {
@@ -275,25 +285,27 @@
    ============================================ */
 
 .delivery-footer {
-    padding: 16px 20px;
+    padding: 6px 8px;
     background: #f8f9fa;
     border-top: 1px solid #e9ecef;
     display: flex;
-    gap: 10px;
-    justify-content: flex-end;
+    gap: 4px;
+    justify-content: flex-start;
+    flex-wrap: wrap;
 }
 
 .delivery-button {
-    padding: 8px 16px;
+    padding: 5px 8px;
     border: none;
-    border-radius: 6px;
-    font-size: 12px;
+    border-radius: 4px;
+    font-size: 10px;
     font-weight: 600;
+    line-height: 1;
     cursor: pointer;
-    transition: all 0.3s ease;
+    transition: all 0.2s ease;
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: 3px;
 }
 
 .delivery-button.primary {
@@ -313,6 +325,17 @@
 
 .delivery-button.secondary:hover {
     background: #d5dbdb;
+}
+
+.delivery-button.route-btn {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    margin-top: 4px;
+}
+
+.delivery-button.route-btn:hover {
+    background: linear-gradient(135deg, #5568d3 0%, #6a3f8f 100%);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
 }
 
 /* ============================================
@@ -342,6 +365,14 @@
 
 /* Extra Large Screens - 4 Columnas (1280px+) */
 @media (min-width: 1280px) {
+    .delivery-card .delivery-notes {
+        background: rgba(255, 251, 234, 0.4);
+        border-left: 4px solid #f39c12;
+        padding: 8px 12px 2px;
+        margin: 12px 0;
+        border-radius: 4px;
+    }
+    
     .delivery-cards-grid {
         grid-template-columns: repeat(4, 1fr);
     }
@@ -448,35 +479,45 @@
 }
 
 .delivery-notes {
-    background: #f8f9fa;
+    background: rgba(255, 251, 234, 0.19);
+    border-left: 4px solid #f39c12;
     padding: 12px;
-    border-radius: 6px;
-    font-size: 12px;
-    color: #555;
-    border-left: 3px solid var(--delivery-primary);
-    margin-top: 12px;
+    margin: 12px 0;
+    border-radius: 4px;
+    box-shadow: 0 0 10px -5px;
+    font-size: 10px;
+    line-height: 1;
+    color: #666;
+}
+
+.delivery-notes[empty] {
+    display: none;
 }
 
 .delivery-timeline {
     display: flex;
-    flex-direction: column;
-    gap: 8px;
-    margin-top: 12px;
+    flex-direction: row;
+    gap: 4px;
+    margin-top: 0;
+    overflow-x: auto;
+    max-width: 250px;
+    padding-bottom: 3px;
 }
 
 .timeline-item {
+    margin-bottom: 0 !important;
     display: flex;
-    gap: 12px;
-    font-size: 12px;
-    color: #666;
+    width: 100%;
+    flex-direction: row-reverse;
+    text-align: right;
 }
 
 .timeline-dot {
-    width: 12px;
-    height: 12px;
+    width: 10px;
+    height: 10px;
     border-radius: 50%;
     background: var(--delivery-primary);
-    margin-top: 4px;
+    margin-top: 2px;
     flex-shrink: 0;
 }
 
@@ -548,10 +589,153 @@
 /* Extra Large Screens (1280px+) */
 @media (min-width: 1280px) {
     .delivery-card {
-        max-width: 100%;
-    }
-    
-    .delivery-grid {
-        grid-template-columns: repeat(4, 1fr);
+/* ============================================
+   Delivery Body - 2 Columns Layout
+   ============================================ */
+
+.delivery-body {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    padding: 8px 12px;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.delivery-body-left {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.delivery-body-right {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.location-item {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 4px;
+    padding: 0;
+    white-space: nowrap;
+}
+
+.location-label {
+    font-size: 14px;
+    color: #667eea;
+    margin-bottom: 0;
+    font-weight: 600;
+    display: inline-block;
+    line-height: 1.1;
+    min-width: 16px;
+    text-align: center;
+}
+
+.location-value {
+    font-size: 11px;
+    font-weight: 500;
+    color: #555;
+    padding: 0;
+    background: none;
+    border-radius: 0;
+    display: inline;
+    line-height: 1.1;
+}
+
+/* Historial Section */
+.historial-section {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    align-items: center;
+    min-width: fit-content;
+}
+
+.historial-title {
+    font-size: 9px;
+    font-weight: 700;
+    color: #666;
+    text-transform: uppercase;
+    letter-spacing: 0.2px;
+    display: inline-block;
+    line-height: 1.1;
+    white-space: nowrap;
+    width: 100%;
+    text-align: right;
+}
+
+/* Cost Box */
+.cost-box {
+    background: linear-gradient(135deg, #ffffff 60%, #f8f9fa 60%);
+    border: 1px solid #e9ecef;
+    border-radius: 3px;
+    padding: 3px 6px;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 4px;
+    margin-top: auto;
+    white-space: nowrap;
+}
+
+.cost-label {
+    font-size: 8px;
+    color: #999;
+    font-weight: 600;
+    white-space: nowrap;
+    line-height: 1.1;
+}
+
+.cost-value {
+    font-size: 11px;
+    font-weight: bold;
+    color: #ff6b35;
+    white-space: nowrap;
+    line-height: 1.1;
+}
+
+.cost-distance {
+    font-size: 7px;
+    color: #ddd;
+    white-space: nowrap;
+    margin-left: auto;
+    line-height: 1.1;
+}
+
+/* Delivery Notes */
+.delivery-notes {
+    background: #fffbea;
+    border-left: 4px solid #f39c12;
+    padding: 12px;
+    margin: 12px 0;
+    border-radius: 4px;
+}
+
+.delivery-notes strong {
+    color: #e67e22;
+    font-size: 12px;
+    display: block;
+    margin-bottom: 6px;
+}
+
+.delivery-notes span {
+    font-size: 13px;
+    color: #555;
+    line-height: 1.4;
+    display: block;
+}
+
+/* ============================================
+   Responsive - 2 Columns Layout
+   ============================================ */
+
+@media (max-width: 768px) {
+    .delivery-body {
+        grid-template-columns: 1fr;
+        gap: 12px;
     }
 }
+
+

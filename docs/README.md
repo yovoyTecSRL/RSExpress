@@ -1,187 +1,149 @@
-# RS Express - Delivery & Errand Service Platform
+# 📦 RSExpress - Sistema de Gestión de Entregas
 
-Una aplicación web moderna inspirada en Uber y Pedidos Ya para servicios de delivery y mandados.
+Sistema completo de gestión de entregas con seguimiento en tiempo real, cálculo de tarifas automático y dashboards interactivos.
 
-## 🚀 Características
+## 🚀 Quick Start
 
-### Para Usuarios
-- **Múltiples tipos de servicio**: 
-  - Envío de paquetes
-  - Mandados (compras, trámites)
-  - Transporte
-  
-- **Perfiles de usuario completos**:
-  - Gestión de información personal
-  - Métodos de pago guardados
-  - Direcciones favoritas
-  - Historial de viajes
+```bash
+# Instalar dependencias
+npm install
 
-- **Seguimiento en tiempo real**:
-  - Código de rastreo único
-  - Estado del viaje
-  - Información del conductor
-  - Estimación de precios y tiempos
+# Iniciar servidor
+npm start
 
-### Para Conductores
-- **Registro sencillo**:
-  - Formulario de solicitud
-  - Verificación de requisitos
-  - Información de beneficios
-
-- **Flexibilidad**:
-  - Horarios libres
-  - Buenos ingresos
-  - Soporte 24/7
+# Abrir en navegador
+http://localhost:5555/delivery-cards.html
+```
 
 ## 📁 Estructura del Proyecto
 
 ```
-RSXpress/
-├── index.html          # Página principal con todas las secciones
-├── styles.css          # Estilos responsivos y modernos
-├── app.js             # Lógica de la aplicación
-├── assets/            # Imágenes y recursos
-│   └── rsexpress-logo.png (usar logo proporcionado)
-└── README.md          # Documentación
+RSExpress/
+├── 📄 index.html                    # Página principal
+├── 📄 delivery-cards.html           # Sistema de entregas principal
+├── 📄 delivery-orders.html          # Gestión de órdenes
+├── 📄 fleet-dashboard.html          # Dashboard de flota
+├── 🔧 server.js                     # Servidor Node.js
+├── 📂 scripts/                      # Scripts de utilidades
+│   └── utils/
+│       ├── delivery-card.js         # Componente de tarjeta
+│       └── ...
+├── 🎨 assets/                       # Estilos y recursos
+│   ├── delivery-card.css
+│   └── ...
+├── 📚 docs/                         # Documentación completa
+│   ├── README.md                    # Documentación principal
+│   ├── ÍNDICE.md                    # Índice de documentación
+│   └── logs/                        # Archivos de log
+└── package.json                     # Dependencias
 ```
 
-## 🎨 Diseño
+## 📚 Documentación
 
-- **Colores principales**: Rojo (#e74c3c) y dorado (#f39c12) - basados en el logo RS Express
-- **Diseño responsivo**: Funciona en móviles, tablets y escritorio
-- **Interfaz moderna**: Inspirada en aplicaciones líderes del mercado
+Toda la documentación completa está en la carpeta [`docs/`](docs/):
 
-## 🛠️ Tecnologías Utilizadas
+- **[README completo](docs/README.md)** - Documentación principal
+- **[Índice de documentación](docs/ÍNDICE.md)** - Guía completa de módulos
+- **[Guía de Inicio Rápido](docs/QUICK_START_DELIVERY_CARDS.txt)** - Pasos para comenzar
+- **[Integración de Tarifas](docs/README_TARIFAS.md)** - Sistema de cálculo de tarifas
+- **[Integración ODOO](docs/ODOO_INTEGRATION_COMPLETE.md)** - Conexión con ODOO
 
-- HTML5
-- CSS3 (Variables CSS, Grid, Flexbox)
-- JavaScript (ES6+)
-- Font Awesome para iconos
-- LocalStorage para persistencia de datos
+## 🎯 Características Principales
 
-## 📱 Funcionalidades Principales
+### 📦 Sistema de Entregas
+- Gestión completa de entregas
+- Estados en tiempo real (Pendiente, En Tránsito, Entregada, Fallida)
+- Filtros avanzados y búsqueda
+- Visualización de rutas con Leaflet.js
+- Notas y historial de eventos
 
-### 1. Sistema de Usuarios
-- Login y registro
-- Gestión de perfil
-- Configuración de notificaciones
-- Privacidad
+### 💰 Sistema de Tarifas
+- Cálculo automático de costos
+- Tarifas por distancia
+- Factores de multiplicación por prioridad
+- Integración con ShippingCalculator
 
-### 2. Solicitud de Servicios
-- Selección de origen y destino
-- Geolocalización
-- Cálculo automático de precios
-- Programación de fecha/hora
-- Descripción detallada del servicio
+### 🗺️ Seguimiento de Flotas
+- Dashboard de flotas en vivo
+- Posicionamiento de conductores
+- Monitoreo de rutas
+- Integración con Traccar
 
-### 3. Gestión de Viajes
-- Listado completo de viajes
-- Filtros por estado (activos, completados, cancelados)
-- Detalles completos del viaje
-- Información del conductor
-- Código de rastreo
+### 👥 Integración ODOO
+- Sincronización de clientes
+- Órdenes desde CRM
+- Proxy JSON-RPC
+- Actualización bidireccional
 
-### 4. Sistema de Conductores
-- Requisitos claros
-- Beneficios destacados
-- Formulario de registro
-- Información de ingresos
+## 🔧 Tecnologías Utilizadas
 
-## 🚀 Cómo Usar
+- **Frontend**: HTML5, CSS3, JavaScript ES6+
+- **Backend**: Node.js
+- **Mapas**: Leaflet.js, OpenStreetMap
+- **Iconos**: FontAwesome 6.4.0
+- **Estilos**: Glass Morphism, Gradientes
 
-1. **Abrir la aplicación**:
-   - Simplemente abre `index.html` en tu navegador
+## 🌐 Rutas Disponibles
 
-2. **Crear cuenta o iniciar sesión**:
-   - Click en "Iniciar Sesión"
-   - Registrarse con datos básicos
+| URL | Descripción |
+|-----|-------------|
+| `/` | Página principal |
+| `/delivery-cards.html` | Sistema de entregas |
+| `/delivery-orders.html` | Gestión de órdenes |
+| `/fleet-dashboard.html` | Dashboard de flota |
+| `/deliveries-perez-zeledon.html` | Demo: Entregas Pérez Zeledón |
 
-3. **Solicitar un servicio**:
-   - Seleccionar tipo de servicio
-   - Ingresar origen y destino
-   - Ver estimación de precio
-   - Confirmar solicitud
+## 📝 Configuración
 
-4. **Seguir el viaje**:
-   - Ver en "Mis Viajes"
-   - Revisar detalles del conductor
-   - Marcar como completado
+Archivo `package.json`:
+```json
+{
+  "name": "RSExpress",
+  "version": "2.0.0",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  }
+}
+```
 
-## 💡 Mejoras Futuras
+## 🔐 Seguridad
 
-- Integración con API de mapas real (Google Maps, Mapbox)
-- Sistema de pagos integrado (Stripe, PayPal)
-- Notificaciones push
-- Chat en tiempo real conductor-cliente
-- Sistema de calificaciones bidireccional
-- Backend con base de datos real
-- App móvil nativa (React Native, Flutter)
-- Panel de administración
-- Analytics y reportes
+- Variables de entorno en `.env`
+- CORS configurado
+- Headers de seguridad
+- Validación de entrada
 
-## 🔧 Configuración para Desarrollo
+## 📊 Base de Datos
 
-Para desarrollo futuro con backend:
+El sistema utiliza datos de ejemplo en memoria. Para producción, integrar con:
+- MongoDB
+- PostgreSQL
+- MySQL
+- ODOO
+
+## 🚀 Deploy
 
 ```bash
-# Estructura sugerida para backend
-backend/
-├── api/
-│   ├── users.js
-│   ├── trips.js
-│   ├── drivers.js
-│   └── payments.js
-├── models/
-│   ├── User.js
-│   ├── Trip.js
-│   └── Driver.js
-└── server.js
+# Build para producción
+npm run build
+
+# Start en modo producción
+NODE_ENV=production npm start
 ```
 
-## 📝 Notas de Implementación
+## 📞 Soporte
 
-- Los datos actualmente se guardan en LocalStorage
-- La geolocalización usa la API del navegador
-- Los precios son calculados de forma simulada
-- La asignación de conductores es automática (demo)
-
-## 🎯 Próximos Pasos para Producción
-
-1. **Backend API**:
-   - Node.js + Express o Python + FastAPI
-   - Base de datos PostgreSQL o MongoDB
-   - Autenticación JWT
-   - WebSockets para tiempo real
-
-2. **Integración de Mapas**:
-   - Google Maps API
-   - Cálculo real de rutas y distancias
-   - Visualización en tiempo real
-
-3. **Pagos**:
-   - Stripe o MercadoPago
-   - Múltiples métodos de pago
-   - Facturación automática
-
-4. **Notificaciones**:
-   - Firebase Cloud Messaging
-   - Email con SendGrid
-   - SMS con Twilio
-
-5. **Seguridad**:
-   - HTTPS obligatorio
-   - Rate limiting
-   - Validación de datos
-   - Encriptación de información sensible
+Para reportar bugs o solicitar features, ver la carpeta [`docs/`](docs/) para contacto y detalles.
 
 ## 📄 Licencia
 
-Este proyecto es un demo/prototipo para RS Express.
+Propiedad de YOVOYTECH SRL
 
-## 👥 Contacto
+## 🙏 Créditos
 
-Para más información sobre RS Express, visita nuestro sitio web o contáctanos directamente.
+Desarrollado por YOVOYTECH SRL - Soluciones en Logística y Transporte
 
 ---
 
-**RS Express** - Tu servicio de delivery y mandados de confianza 🚀📦
+**Última actualización**: 3 de Diciembre, 2025

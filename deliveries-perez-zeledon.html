@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Entregas Pérez Zeledón - RSExpress</title>
+    <link rel="stylesheet" href="/assets/delivery-card.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 40px;
+            animation: slideDown 0.6s ease-out;
+        }
+
+        .header h1 {
+            font-size: 3em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .header p {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+
+        .stats-bar {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 40px;
+            animation: slideUp 0.6s ease-out 0.2s backwards;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 24px rgba(0,0,0,0.15);
+        }
+
+        .stat-number {
+            font-size: 2.5em;
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 8px;
+        }
+
+        .stat-label {
+            font-size: 0.95em;
+            color: #7f8c8d;
+            font-weight: 600;
+        }
+
+        .filters {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 30px;
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            align-items: center;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+
+        .filters label {
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+        .filters select {
+            padding: 8px 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            font-size: 1em;
+            cursor: pointer;
+            transition: border-color 0.3s ease;
+        }
+
+        .filters select:hover,
+        .filters select:focus {
+            border-color: #667eea;
+            outline: none;
+        }
+
+        .deliveries-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(520px, 1fr));
+            gap: 25px;
+            animation: fadeIn 0.8s ease-out 0.4s backwards;
+        }
+
+        @media (max-width: 1200px) {
+            .deliveries-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .footer {
+            text-align: center;
+            color: white;
+            margin-top: 50px;
+            padding-top: 30px;
+            border-top: 2px solid rgba(255,255,255,0.2);
+        }
+
+        .footer p {
+            font-size: 0.95em;
+            opacity: 0.9;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+
+        .empty-state {
+            grid-column: 1 / -1;
+            text-align: center;
+            padding: 60px 20px;
+            color: white;
+        }
+
+        .empty-state i {
+            font-size: 4em;
+            margin-bottom: 20px;
+            opacity: 0.7;
+        }
+
+        .empty-state p {
+            font-size: 1.2em;
+            opacity: 0.8;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1><i class="fas fa-map-marked-alt"></i> Entregas Pérez Zeledón</h1>
+            <p>Sistema de gestión de entregas - RSExpress</p>
+        </div>
+
+        <!-- Statistics -->
+        <div class="stats-bar" id="statsBar">
+            <div class="stat-card">
+                <div class="stat-number" id="totalDeliveries">0</div>
+                <div class="stat-label">Total Entregas</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="completedCount">0</div>
+                <div class="stat-label">✅ Completadas</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="inTransitCount">0</div>
+                <div class="stat-label">🚚 En Tránsito</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="totalDistance">0</div>
+                <div class="stat-label">📏 Km Totales</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="totalCostDisplay">₡0</div>
+                <div class="stat-label">💰 Costo Total</div>
+            </div>
+        </div>
+
+        <!-- Filters -->
+        <div class="filters">
+            <label for="filterStatus">Filtrar por estado:</label>
+            <select id="filterStatus">
+                <option value="">Todos</option>
+                <option value="completed">✅ Completadas</option>
+                <option value="in-transit">🚚 En Tránsito</option>
+                <option value="pending">⏳ Pendientes</option>
+                <option value="failed">❌ Fallidas</option>
+            </select>
+
+            <label for="filterPriority">Filtrar por prioridad:</label>
+            <select id="filterPriority">
+                <option value="">Todas</option>
+                <option value="high">🔴 Alta</option>
+                <option value="normal">🟠 Normal</option>
+                <option value="low">🟢 Baja</option>
+            </select>
+
+            <button onclick="resetFilters()" style="
+                padding: 8px 16px;
+                background: #667eea;
+                color: white;
+                border: none;
+                border-radius: 6px;
+                cursor: pointer;
+                font-weight: 600;
+                transition: background 0.3s ease;
+            " onmouseover="this.style.background='#764ba2'" onmouseout="this.style.background='#667eea'">
+                <i class="fas fa-redo"></i> Restablecer
+            </button>
+        </div>
+
+        <!-- Deliveries Grid -->
+        <div class="deliveries-grid" id="deliveryExamplesContainer">
+            <div class="empty-state">
+                <i class="fas fa-spinner fa-spin"></i>
+                <p>Cargando entregas...</p>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer">
+            <p>🚚 RSExpress - Sistema de Entregas | Pérez Zeledón, Costa Rica</p>
+            <p style="font-size: 0.85em; margin-top: 10px;">Actualizado: <span id="updateTime"></span></p>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="/scripts/utils/delivery-card.js"></script>
+    <script src="/scripts/utils/delivery-examples-perez-zeledon.js"></script>
+    <script>
+        /**
+         * Actualizar estadísticas
+         */
+        function updateStats() {
+            const deliveries = deliveryExamples;
+            
+            document.getElementById('totalDeliveries').textContent = deliveries.length;
+            document.getElementById('completedCount').textContent = deliveries.filter(d => d.estado === 'completed').length;
+            document.getElementById('inTransitCount').textContent = deliveries.filter(d => d.estado === 'in-transit').length;
+            
+            const totalKm = deliveries.reduce((sum, d) => {
+                const km = parseFloat(d.distancia);
+                return sum + (isNaN(km) ? 0 : km);
+            }, 0);
+            document.getElementById('totalDistance').textContent = totalKm.toFixed(1);
+            
+            const totalCost = deliveries.reduce((sum, d) => {
+                const cost = parseFloat(d.costo.replace('₡', '').replace(',', ''));
+                return sum + (isNaN(cost) ? 0 : cost);
+            }, 0);
+            document.getElementById('totalCostDisplay').textContent = '₡' + totalCost.toLocaleString('es-CR', { maximumFractionDigits: 0 });
+            
+            document.getElementById('updateTime').textContent = new Date().toLocaleString('es-CR');
+        }
+
+        /**
+         * Filtrar entregas
+         */
+        function applyFilters() {
+            const statusFilter = document.getElementById('filterStatus').value;
+            const priorityFilter = document.getElementById('filterPriority').value;
+            const container = document.getElementById('deliveryExamplesContainer');
+            
+            const filtered = deliveryExamples.filter(d => {
+                const matchStatus = !statusFilter || d.estado === statusFilter;
+                const matchPriority = !priorityFilter || d.prioridad === priorityFilter;
+                return matchStatus && matchPriority;
+            });
+
+            container.innerHTML = '';
+
+            if (filtered.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-inbox"></i>
+                        <p>No hay entregas que coincidan con los filtros</p>
+                    </div>
+                `;
+                return;
+            }
+
+            filtered.forEach(data => {
+                const delivery = new DeliveryCard(data);
+                container.appendChild(delivery.render());
+            });
+
+            console.log(`✅ ${filtered.length} entregas mostradas (${deliveryExamples.length} total)`);
+        }
+
+        /**
+         * Restablecer filtros
+         */
+        function resetFilters() {
+            document.getElementById('filterStatus').value = '';
+            document.getElementById('filterPriority').value = '';
+            applyFilters();
+        }
+
+        /**
+         * Event listeners para filtros
+         */
+        document.getElementById('filterStatus').addEventListener('change', applyFilters);
+        document.getElementById('filterPriority').addEventListener('change', applyFilters);
+
+        /**
+         * Inicializar página
+         */
+        document.addEventListener('DOMContentLoaded', () => {
+            updateStats();
+            console.log('\n✅ Página de entregas Pérez Zeledón cargada');
+            console.log(`📦 Total de entregas: ${deliveryExamples.length}`);
+            console.log('🎯 Usa los filtros para buscar entregas');
+        });
+    </script>
+</body>
+</html>

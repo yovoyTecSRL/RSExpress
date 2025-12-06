@@ -1,0 +1,409 @@
+/**
+ * delivery-cards.css
+ * Estilos para componente DeliveryCards
+ */
+
+.delivery-cards {
+  padding: 2rem;
+  background-color: #f8f9fa;
+  border-radius: var(--border-radius);
+}
+
+.delivery-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+  gap: 2rem;
+}
+
+.delivery-header h1 {
+  margin: 0;
+  font-size: 28px;
+  color: var(--dark-color);
+}
+
+.delivery-header .header-info {
+  display: flex;
+  gap: 2rem;
+}
+
+.delivery-header .info-item {
+  display: flex;
+  flex-direction: column;
+}
+
+.delivery-header .info-label {
+  font-size: 12px;
+  color: var(--secondary-color);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.delivery-header .info-value {
+  font-size: 18px;
+  font-weight: bold;
+  color: var(--dark-color);
+}
+
+@media (max-width: 768px) {
+  .delivery-header {
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .delivery-header .header-info {
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .delivery-header h1 {
+    font-size: 20px;
+  }
+}
+
+/* Filter Controls */
+.filter-controls {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 2rem;
+  flex-wrap: wrap;
+}
+
+.filter-controls select,
+.filter-controls input {
+  padding: 0.5rem 1rem;
+  border: 2px solid var(--light-color);
+  border-radius: var(--border-radius);
+  font-size: 14px;
+  transition: var(--transition);
+}
+
+.filter-controls select:focus,
+.filter-controls input:focus {
+  border-color: var(--primary-color);
+  outline: none;
+}
+
+.filter-button {
+  padding: 0.5rem 1.5rem;
+  background-color: var(--primary-color);
+  color: white;
+  border: none;
+  border-radius: var(--border-radius);
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.filter-button:hover {
+  background-color: #0056b3;
+  transform: translateY(-2px);
+}
+
+/* Status Filters */
+.status-filter-group {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+}
+
+.status-filter-group label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  user-select: none;
+}
+
+.status-filter-group input[type="checkbox"] {
+  cursor: pointer;
+}
+
+/* Cards Container */
+.cards-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 1.5rem;
+}
+
+@media (max-width: 1024px) {
+  .cards-container {
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  }
+}
+
+@media (max-width: 768px) {
+  .cards-container {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Delivery Card */
+.delivery-card {
+  background-color: white;
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow-md);
+  padding: 1.5rem;
+  transition: var(--transition);
+  border-left: 4px solid var(--primary-color);
+}
+
+.delivery-card:hover {
+  box-shadow: var(--shadow-lg);
+  transform: translateY(-4px);
+}
+
+.delivery-card.pending {
+  border-left-color: #ffc107;
+}
+
+.delivery-card.in-progress {
+  border-left-color: #0dcaf0;
+}
+
+.delivery-card.completed {
+  border-left-color: #198754;
+}
+
+.delivery-card.failed {
+  border-left-color: #dc3545;
+}
+
+/* Card Header */
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 1rem;
+  padding-bottom: 1rem;
+  border-bottom: 2px solid var(--light-color);
+}
+
+.card-title {
+  margin: 0;
+  font-size: 16px;
+  font-weight: bold;
+  color: var(--primary-color);
+}
+
+.card-status {
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  background-color: #e2e3e5;
+  color: #383d41;
+}
+
+.card-status.pending {
+  background-color: #fff3cd;
+  color: #997404;
+}
+
+.card-status.in-progress {
+  background-color: #cfe2ff;
+  color: #084298;
+}
+
+.card-status.completed {
+  background-color: #d1e7dd;
+  color: #0f5132;
+}
+
+.card-status.failed {
+  background-color: #f8d7da;
+  color: #721c24;
+}
+
+/* Card Body */
+.card-body {
+  margin-bottom: 1.5rem;
+}
+
+.card-row {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 0.75rem;
+  font-size: 14px;
+}
+
+.card-label {
+  color: var(--secondary-color);
+  font-weight: 600;
+}
+
+.card-value {
+  color: var(--dark-color);
+  font-weight: 500;
+  text-align: right;
+}
+
+.card-value.highlight {
+  color: var(--primary-color);
+  font-weight: bold;
+}
+
+/* Delivery Route */
+.delivery-route {
+  background-color: var(--light-color);
+  padding: 1rem;
+  border-radius: calc(var(--border-radius) - 2px);
+  margin-bottom: 1rem;
+}
+
+.delivery-route h4 {
+  margin: 0 0 0.75rem 0;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--secondary-color);
+}
+
+.delivery-route p {
+  margin: 0.25rem 0;
+  font-size: 13px;
+  color: var(--dark-color);
+}
+
+/* GPS Info */
+.gps-info {
+  background-color: #f0f0f0;
+  padding: 0.75rem;
+  border-radius: calc(var(--border-radius) - 2px);
+  margin-bottom: 1rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.gps-coordinates {
+  font-family: monospace;
+  font-size: 12px;
+  color: var(--dark-color);
+}
+
+.gps-accuracy {
+  font-size: 12px;
+  color: var(--secondary-color);
+}
+
+/* Card Actions */
+.card-actions {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: flex-end;
+}
+
+.action-btn {
+  padding: 0.4rem 0.8rem;
+  font-size: 12px;
+  border: 1px solid var(--light-color);
+  background-color: white;
+  color: var(--primary-color);
+  border-radius: calc(var(--border-radius) - 2px);
+  cursor: pointer;
+  transition: var(--transition);
+  font-weight: 600;
+}
+
+.action-btn:hover {
+  background-color: var(--primary-color);
+  color: white;
+  border-color: var(--primary-color);
+}
+
+.action-btn.danger {
+  color: #dc3545;
+  border-color: #dc3545;
+}
+
+.action-btn.danger:hover {
+  background-color: #dc3545;
+  color: white;
+}
+
+.action-btn.success {
+  color: #198754;
+  border-color: #198754;
+}
+
+.action-btn.success:hover {
+  background-color: #198754;
+  color: white;
+}
+
+/* No Cards Message */
+.no-cards {
+  text-align: center;
+  padding: 3rem 2rem;
+  color: var(--secondary-color);
+}
+
+.no-cards p {
+  margin: 0;
+  font-size: 16px;
+}
+
+.no-cards .icon {
+  font-size: 48px;
+  margin-bottom: 1rem;
+  opacity: 0.5;
+}
+
+/* Loading State */
+.loading-skeleton {
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: loading 1.5s infinite;
+}
+
+@keyframes loading {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .delivery-cards {
+    padding: 1rem;
+  }
+
+  .filter-controls {
+    flex-direction: column;
+  }
+
+  .filter-controls select,
+  .filter-controls input {
+    width: 100%;
+  }
+
+  .cards-container {
+    grid-template-columns: 1fr;
+  }
+
+  .card-header {
+    flex-direction: column;
+    gap: 0.75rem;
+    align-items: flex-start;
+  }
+
+  .card-row {
+    flex-direction: column;
+  }
+
+  .card-value {
+    text-align: left;
+  }
+
+  .gps-info {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+}

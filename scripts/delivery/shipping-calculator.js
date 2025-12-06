@@ -5,31 +5,31 @@
 
 class ShippingCalculator {
     constructor() {
-        // HQ RSExpress en CDMX
+        // HQ RSExpress en Pérez Zeledón, Costa Rica
         this.hq = {
             nombre: 'HQ RSExpress',
-            lat: 19.4326,
-            lng: -99.1332
+            lat: 9.3778,
+            lng: -83.7274
         };
 
-        // Ubicaciones predefinidas en CDMX
+        // Ubicaciones predefinidas en Pérez Zeledón
         this.locations = [
-            { id: 1, nombre: 'Paseo de la Reforma 505, CDMX', lat: 19.4349, lng: -99.1868 },
-            { id: 2, nombre: 'Avenida Paseo de los Tamarindos 400, CDMX', lat: 19.3904, lng: -99.2450 },
-            { id: 3, nombre: 'Centro Comercial Polanco, CDMX', lat: 19.4269, lng: -99.2061 },
-            { id: 4, nombre: 'Calle Médicos 234, CDMX', lat: 19.3987, lng: -99.1564 },
-            { id: 5, nombre: 'Plaza Mayor 456, Centro Histórico, CDMX', lat: 19.4327, lng: -99.1332 },
-            { id: 6, nombre: 'La Unión, San Isidro, CDMX', lat: 19.3598, lng: -99.0948 },
-            { id: 7, nombre: 'Avenida Tecnológica 100, CDMX', lat: 19.4589, lng: -99.2156 },
-            { id: 8, nombre: 'Boulevar Miguel de Cervantes, CDMX', lat: 19.4167, lng: -99.2317 },
-            { id: 9, nombre: 'Calle Tolstoi 123, Anzures, CDMX', lat: 19.4380, lng: -99.2001 },
-            { id: 10, nombre: 'Avenida Santa Fe 505, CDMX', lat: 19.3892, lng: -99.2567 }
+            { id: 1, nombre: 'Centro Comercial Pérez Zeledón, San Isidro', lat: 9.3800, lng: -83.7285 },
+            { id: 2, nombre: 'Hospital de Pérez Zeledón, San Isidro', lat: 9.3750, lng: -83.7300 },
+            { id: 3, nombre: 'Mercado Municipal, Buenos Aires', lat: 9.3600, lng: -83.7400 },
+            { id: 4, nombre: 'Parque Central, Uvita', lat: 9.3156, lng: -83.7310 },
+            { id: 5, nombre: 'Marino Ballena National Park, Ojochal', lat: 9.2800, lng: -83.7450 },
+            { id: 6, nombre: 'Supermercado Walmart, San Isidro', lat: 9.3850, lng: -83.7280 },
+            { id: 7, nombre: 'Colegio San Isidro Labrador, San Isidro', lat: 9.3900, lng: -83.7200 },
+            { id: 8, nombre: 'Terminal de Autobuses, San Isidro', lat: 9.3820, lng: -83.7360 },
+            { id: 9, nombre: 'Restaurante El Castillo, Ojochal', lat: 9.2970, lng: -83.7520 },
+            { id: 10, nombre: 'Playas Uvita y Marino Ballena, Uvita', lat: 9.2900, lng: -83.7380 }
         ];
 
-        // Tarifas base (precio por km)
+        // Tarifas en colones costarricenses (₡)
         this.rates = {
-            base: 50,        // $50 tarifa base
-            perKm: 8,        // $8 por km
+            base: 2000,      // ₡2000 tarifa base
+            perKm: 200,      // ₡200 por km
             rush: 1.5,       // 50% extra en horario pico (16-20hrs)
             express: 2.0     // 100% extra para envíos express
         };
@@ -55,9 +55,20 @@ class ShippingCalculator {
 
     /**
      * Calcula precio de envío
+     * Fórmula: Si distancia <= 10 km: ₡2000
+     *          Si distancia > 10 km: ₡2000 + ((distancia - 10) × ₡200)
      */
     calculateShippingPrice(distanceKm, isExpress = false, isRushHour = false) {
-        let price = this.rates.base + (distanceKm * this.rates.perKm);
+        let price;
+        
+        // Tarifa plana de ₡2000 para hasta 10 km
+        // Para distancias mayores a 10 km, se agrega ₡200 por cada km extra
+        if (distanceKm <= 10) {
+            price = 2000;  // Tarifa plana
+        } else {
+            const extraKm = distanceKm - 10;
+            price = 2000 + (extraKm * 200);
+        }
         
         if (isRushHour) {
             price *= this.rates.rush;
@@ -94,8 +105,9 @@ class ShippingCalculator {
             isExpress: isExpress,
             location: location,
             breakdown: {
-                base: this.rates.base,
-                perKm: this.rates.perKm * distance,
+                base: 2000,
+                extraKm: Math.max(0, distance - 10),
+                extraCost: Math.max(0, (distance - 10) * 200),
                 rushMultiplier: isRushHour ? this.rates.rush : 1,
                 expressMultiplier: isExpress ? this.rates.express : 1
             }
@@ -125,27 +137,86 @@ class ShippingCalculator {
     }
 
     /**
-     * Genera ruta de prueba (waypoints)
+     * Genera ruta con waypoints no lineales (más realista)
+     * Utiliza variaciones sinusoidales para crear un patrón natural
      */
-    generateRoute(startLat, startLng, endLat, endLng, waypoints = 5) {
+    generateRoute(startLat, startLng, endLat, endLng, numWaypoints = 5) {
         const route = [];
+        const totalPoints = numWaypoints + 2; // incluye start y end
         
-        for (let i = 0; i <= waypoints; i++) {
-            const t = i / waypoints;
+        for (let i = 0; i < totalPoints; i++) {
+            const t = i / (totalPoints - 1);
+            
+            // Interpolación base lineal
             const lat = startLat + (endLat - startLat) * t;
             const lng = startLng + (endLng - startLng) * t;
             
-            // Agregar pequeña variación para que no sea lineal
-            const variation = Math.sin(i) * 0.001;
+            // Variación no lineal para crear waypoints más realistas
+            // Usa combinación de seno y coseno para desviaciones naturales
+            const latVariation = Math.sin(t * Math.PI) * Math.cos(i * 0.7) * 0.0015;
+            const lngVariation = Math.cos(t * Math.PI) * Math.sin(i * 0.9) * 0.0015;
+            
+            // Distancia acumulada desde el inicio
+            let accumulatedDistance = 0;
+            if (i > 0) {
+                const prevPoint = route[i - 1];
+                accumulatedDistance = prevPoint.accumulatedDistance + 
+                    this.calculateDistance(prevPoint.lat, prevPoint.lng, 
+                                         lat + latVariation, lng + lngVariation);
+            }
+            
             route.push({
-                lat: lat + variation,
-                lng: lng + variation,
+                lat: parseFloat((lat + latVariation).toFixed(6)),
+                lng: parseFloat((lng + lngVariation).toFixed(6)),
                 step: i + 1,
-                total: waypoints + 1
+                total: totalPoints,
+                progress: Math.round(t * 100),
+                accumulatedDistance: Math.round(accumulatedDistance * 100) / 100,
+                timestamp: new Date(Date.now() + i * 5 * 60000) // 5 minutos entre puntos
             });
         }
         
         return route;
+    }
+
+    /**
+     * Calcula información detallada de una ruta entre dos ubicaciones
+     */
+    calculateRouteInfo(startId, endId, numWaypoints = 5) {
+        const start = this.getLocation(startId) || this.hq;
+        const end = this.getLocation(endId);
+        
+        if (!end && endId !== 'HQ') {
+            return null;
+        }
+        
+        const distance = this.calculateDistance(
+            start.lat, start.lng,
+            end.lat, end.lng
+        );
+        
+        const route = this.generateRoute(start.lat, start.lng, end.lat, end.lng, numWaypoints);
+        const isRushHour = this.isRushHour();
+        const price = this.calculateShippingPrice(distance, false, isRushHour);
+        
+        return {
+            from: start,
+            to: end,
+            distance: Math.round(distance * 100) / 100,
+            price: price,
+            isRushHour: isRushHour,
+            currency: '₡',
+            estimatedTime: Math.ceil(distance / 50) + ' minutos', // Estimado a 50km/h
+            waypoints: route,
+            breakdown: {
+                baseRate: '₡2000',
+                ratePerExtraKm: '₡200/km',
+                extraKm: Math.max(0, distance - 10),
+                extraCost: Math.round(Math.max(0, (distance - 10) * 200) * 100) / 100,
+                rushHourMultiplier: isRushHour ? `${(this.rates.rush - 1) * 100}%` : '0%',
+                finalPrice: price
+            }
+        };
     }
 }
 

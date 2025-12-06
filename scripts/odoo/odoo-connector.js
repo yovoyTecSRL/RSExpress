@@ -21,6 +21,11 @@ class OdooConnector {
         this.requestId = 0;
         this.proxyMode = this.config.url.includes('localhost:9999');
         
+        // Datos sincronizados
+        this.users = [];
+        this.partners = [];
+        this.lastSync = null;
+        
         console.log(`🔗 OdooConnector inicializado ${this.proxyMode ? '(Via Proxy Local)' : '(Direct)'}:`, this.config.url);
     }
     
@@ -28,25 +33,7 @@ class OdooConnector {
      * Conectar a Odoo (rsexpress.online usa autenticación por token)
      */
     async connect() {
-        try {
-            console.log('🔄 Verificando conexión a Odoo rsexpress.online...');
-            
-            // Verificar conexión haciendo un RPC simple
-            const result = await this.rpc('res.partner', 'search', [[]], {});
-            
-            if (Array.isArray(result)) {
-                this.isConnected = true;
-                console.log('✅ Conectado a Odoo rsexpress.online');
-                return true;
-            } else {
-                console.error('❌ Error de verificación en Odoo:', result);
-                return false;
-            }
-        } catch (error) {
-            console.error('❌ Error conectando a Odoo:', error);
-            this.isConnected = false;
-            return false;
-        }
+        return this.checkConnection();
     }
     
     /**
@@ -101,6 +88,71 @@ class OdooConnector {
         } catch (error) {
             console.error(`❌ Error en RPC (${model}.${method}):`, error);
             throw error;
+        }
+    }
+
+    /**
+     * Llamada genérica JSON-RPC a Odoo (API unificada)
+     * Compatible con odoo-integration-v2.js
+     */
+    async callOdooAPI(service, method, args) {
+        try {
+            const payload = {
+                jsonrpc: '2.0',
+                method: 'call',
+                params: {
+                    service: service,
+                    method: method,
+                    args: args
+                },
+                id: Math.random()
+            };
+
+            const response = await fetch(`${this.config.url}${this.config.endpoint}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(payload)
+            });
+
+            const data = await response.json();
+
+            if (data.error) {
+                const errorMsg = data.error.data?.message || data.error.message;
+                console.error(`[OdooAPI] Error (${service}.${method}):`, errorMsg);
+                throw new Error(errorMsg);
+            }
+
+            return data.result;
+        } catch (error) {
+            console.error(`[OdooAPI] Error:`, error);
+            throw error;
+        }
+    }
+
+    /**
+     * Verificar conexión con Odoo (compatible con odoo-integration-v2.js)
+     */
+    async checkConnection() {
+        try {
+            console.log('🔄 Verificando conexión a Odoo...');
+            
+            const result = await this.callOdooAPI('common', 'version', []);
+            
+            if (result && result.server_version) {
+                this.isConnected = true;
+                console.log(`✅ Conectado a Odoo ${result.server_version}`);
+                return true;
+            } else {
+                console.error('❌ Error de verificación en Odoo:', result);
+                this.isConnected = false;
+                return false;
+            }
+        } catch (error) {
+            console.error('❌ Error conectando a Odoo:', error);
+            this.isConnected = false;
+            return false;
         }
     }
     
@@ -408,6 +460,68 @@ class OdooConnector {
             console.error('❌ Error en sincronización:', error);
             return 0;
         }
+    }
+
+    /**
+     * Sincronizar usuarios desde Odoo (compatible con odoo-integration-v2.js)
+     */
+    async syncUsers() {
+        try {
+            console.log('[OdooConnector] 📋 Sincronizando usuarios...');
+
+            // Obtener usuarios
+            const users = await this.callOdooAPI('object', 'execute_kw', [
+                this.config.database,
+                this.config.uid,
+                this.config.token,
+                'res.users',
+                'search_read',
+                [],
+                {
+                    fields: ['id', 'name', 'login', 'email', 'active'],
+                    limit: 100
+                }
+            ]);
+
+            // Obtener partners
+            const partners = await this.callOdooAPI('object', 'execute_kw', [
+                this.config.database,
+                this.config.uid,
+                this.config.token,
+                'res.partner',
+                'search_read',
+                [],
+                {
+                    fields: ['id', 'name', 'email', 'phone', 'is_company'],
+                    limit: 100
+                }
+            ]);
+
+            this.users = users || [];
+            this.partners = partners || [];
+            this.lastSync = new Date();
+
+            console.log(`[OdooConnector] ✅ Sincronización completada: ${users.length} usuarios, ${partners.length} partners`);
+            return { users, partners };
+
+        } catch (error) {
+            console.error('[OdooConnector] ❌ Error durante sincronización:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * Obtener usuarios sincronizados
+     */
+    getUsers() {
+        return this.users || [];
+    }
+
+    /**
+     * Obtener partners sincronizados
+     */
+    getPartners() {
+        return this.partners || [];
     }
     
     /**

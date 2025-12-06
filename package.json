@@ -1,5 +1,35 @@
 {
+  "name": "rsexpress",
+  "version": "2.0.0",
+  "description": "RSExpress - Odoo 19 Integration con React",
+  "main": "server.js",
+  "type": "module",
+  "scripts": {
+    "dev": "concurrently \"npm run server\" \"npm run vite:dev\"",
+    "server": "node server.js",
+    "server-only": "node server.js",
+    "proxy": "node scripts/odoo/odoo-proxy.js",
+    "vite:dev": "vite",
+    "vite:build": "vite build",
+    "vite:preview": "vite preview",
+    "start": "concurrently \"node server.js\" \"node scripts/odoo/odoo-proxy.js\""
+  },
   "dependencies": {
-    "xmlrpc": "^1.3.2"
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-router-dom": "^6.20.0",
+    "axios": "^1.6.2",
+    "express": "^4.18.2",
+    "cors": "^2.8.5",
+    "concurrently": "^8.2.0"
+  },
+  "devDependencies": {
+    "vite": "^5.0.0",
+    "@vitejs/plugin-react": "^4.2.0",
+    "@types/react": "^18.2.0",
+    "@types/react-dom": "^18.2.0"
+  },
+  "engines": {
+    "node": ">=16.0.0"
   }
 }
