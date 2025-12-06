@@ -1,7 +1,8 @@
 /**
- * 🚀 Servidor Web RSExpress - Puerto 5555
- * Sirve las entregas de Pérez Zeledón con cargas dinámicas
- * Incluye proxy para Odoo 19 en puerto 9999
+ * 🚀 Servidor Web RSExpress - Múltiples Puertos
+ * 5555: HTML - pruebas UI (entrega-cards.html)
+ * 7777: React app (Vite)
+ * 9999: Proxy Odoo
  */
 
 import http from 'http';
@@ -13,9 +14,10 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const PORT = 5555;
+const PORT_HTML = 5555;  // HTML UI Server
+const PORT_REACT = 7777; // React Vite (managed by vite itself)
+const PORT_ODOO = 9999;  // Odoo Proxy
 const HOST = 'localhost';
-const PROXY_PORT = 9999;
 
 // Tipos MIME
 const mimeTypes = {
@@ -121,20 +123,25 @@ const server = http.createServer((req, res) => {
 });
 
 // Iniciar servidor
-server.listen(PORT, HOST, () => {
+server.listen(PORT_HTML, HOST, () => {
     console.log(`
 ╔═══════════════════════════════════════════════════════╗
-║  🚀 SERVIDOR RSEXPRESS INICIADO                      ║
+║  🚀 SERVIDOR RSEXPRESS - 3 INSTANCIAS ACTIVAS        ║
 ╚═══════════════════════════════════════════════════════╝
 
-  🌐 SERVIDOR WEB:
-    📍 URL: http://${HOST}:${PORT}
+  🌐 SERVIDOR HTML (UI Testing):
+    📍 URL: http://${HOST}:${PORT_HTML}
+    📄 Archivos: delivery-cards.html, orders-from-crm.html, etc.
+    
+  ⚛️  REACT APP (Vite):
+    📍 URL: http://${HOST}:${PORT_REACT}
+    🔥 Hot Reload Habilitado
     
   🔄 PROXY ODOO:
-    📍 URL: http://${HOST}:${PROXY_PORT}
+    📍 URL: http://${HOST}:${PORT_ODOO}
     ✅ Estado: Iniciando...
 
-  📋 Archivos disponibles:
+  📋 Archivos disponibles en 5555:
     ✅ /delivery-cards.html - Entregas principales
     ✅ /deliveries-perez-zeledon.html - Demo Pérez Zeledón
     ✅ /delivery-card-demo.html - Demo de tarjetas
@@ -142,7 +149,7 @@ server.listen(PORT, HOST, () => {
     ✅ /delivery-orders.html - Órdenes de entrega
     ✅ /orders-from-crm.html - Órdenes desde CRM (requiere proxy)
   
-  ⏱️  Presiona CTRL+C para detener
+  ⏱️  Presiona CTRL+C para detener TODOS los servidores
 
 ═══════════════════════════════════════════════════════
     `);
@@ -154,7 +161,7 @@ server.listen(PORT, HOST, () => {
 // Manejar errores
 server.on('error', (err) => {
     if (err.code === 'EADDRINUSE') {
-        console.error(`❌ Error: Puerto ${PORT} ya está en uso`);
+        console.error(`❌ Error: Puerto ${PORT_HTML} ya está en uso`);
         process.exit(1);
     } else {
         console.error('❌ Error del servidor:', err);

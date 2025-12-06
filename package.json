@@ -5,14 +5,19 @@
   "main": "server.js",
   "type": "module",
   "scripts": {
-    "dev": "concurrently \"npm run server\" \"npm run vite:dev\"",
+    "dev": "concurrently \"npm run server-html\" \"npm run vite:dev\" \"npm run proxy\"",
+    "dev:html": "node server.js",
+    "dev:react": "vite",
+    "dev:proxy": "node scripts/odoo/odoo-proxy.js",
     "server": "node server.js",
+    "server-html": "node server.js",
     "server-only": "node server.js",
     "proxy": "node scripts/odoo/odoo-proxy.js",
+    "react": "vite",
     "vite:dev": "vite",
     "vite:build": "vite build",
     "vite:preview": "vite preview",
-    "start": "concurrently \"node server.js\" \"node scripts/odoo/odoo-proxy.js\""
+    "start": "concurrently \"npm run server-html\" \"npm run vite:dev\" \"npm run proxy\""
   },
   "dependencies": {
     "react": "^18.2.0",

@@ -1,11 +1,11 @@
 /**
- * Proxy para Odoo 19
+ * Proxy para Odoo 19 - Puerto 9999
  * Resuelve problemas de CORS y actúa como intermediario
  */
 
-const http = require('http');
-const https = require('https');
-const url = require('url');
+import http from 'http';
+import https from 'https';
+import url from 'url';
 
 const ODOO_HOST = 'rsexpress.online';
 const ODOO_PORT = 443;
