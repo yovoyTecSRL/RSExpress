@@ -1,10 +1,11 @@
 /**
- * OrdersFromCRM Component - Advanced Dashboard
+ * OrdersFromCRM Component - Advanced Dashboard with Delivery-Cards Style
  * Componente React para visualizar y gestionar leads/órdenes desde CRM Odoo
- * Con panel flotante de estadísticas, sistema de filtros avanzado, modal para crear órdenes y mapa de selección
+ * Combina: Lógica de delivery-cards.html + DOM structure + CSS animations
+ * Características: Panel flotante de stats, filtros avanzados, vista grid/list, modal moderno
  */
 
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import useOdoo from '@hooks/useOdoo';
 import useLeads from '@hooks/useLeads';
 import useOrders from '@hooks/useOrders';
@@ -55,11 +56,11 @@ const OrdersFromCRM = () => {
   // ═══════════════════════════════════════════════════════════════════
 
   useEffect(() => {
-    if (isConnected && odoo && leads.length === 0) {
-      console.log('[OrdersFromCRM] 🚀 Auto-cargando leads...');
+    if (isConnected && odoo) {
+      console.log('[OrdersFromCRM] 🚀 Auto-cargando leads desde CRM...');
       loadLeads([], 0, 50);
     }
-  }, [isConnected, odoo]);
+  }, [isConnected, odoo, loadLeads]);
 
   // ═══════════════════════════════════════════════════════════════════
   // FUNCIONES DE FILTRADO Y BÚSQUEDA
@@ -350,7 +351,18 @@ const OrdersFromCRM = () => {
       </div>
 
       {/* FLOATING STATS PANEL */}
-      <div className="floating-stats-panel">
+    
+
+      {/* TOOLBAR */}
+      <div className="toolbar">
+        <button 
+          className={`toolbar-btn filter-btn ${showFilters ? 'active' : ''}`}
+          onClick={() => setShowFilters(!showFilters)}
+        >
+          🔍 Filtros
+        </button>
+
+          <div className="floating-stats-panel">
         <div className="stats-container">
           <div className="stat-badge badge-fallidos">
             <span className="stat-icon">❌</span>
@@ -400,15 +412,6 @@ const OrdersFromCRM = () => {
           </button>
         </div>
       </div>
-
-      {/* TOOLBAR */}
-      <div className="toolbar">
-        <button 
-          className={`toolbar-btn filter-btn ${showFilters ? 'active' : ''}`}
-          onClick={() => setShowFilters(!showFilters)}
-        >
-          🔍 Filtros
-        </button>
 
         <div className="view-toggle">
           <button 

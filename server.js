@@ -1,23 +1,27 @@
 /**
- * 🚀 Servidor Web RSExpress - Múltiples Puertos
- * 5555: HTML - pruebas UI (entrega-cards.html)
- * 7777: React app (Vite)
- * 9999: Proxy Odoo
+ * 🚀 Servidor Web RSExpress - Multi-Port Server
+ * 5555: HTML UI (pruebas estáticas)
+ * 7777: React App (proxy a Vite)
+ * 9999: Odoo Proxy API
  */
 
 import http from 'http';
+import https from 'https';
 import fs from 'fs';
 import path from 'path';
-import { spawn } from 'child_process';
+import url from 'url';
 import { fileURLToPath } from 'url';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const PORT_HTML = 5555;  // HTML UI Server
-const PORT_REACT = 7777; // React Vite (managed by vite itself)
+const PORT_REACT = 7777; // React Vite Proxy
 const PORT_ODOO = 9999;  // Odoo Proxy
 const HOST = 'localhost';
+
+const ODOO_URL = 'https://rsexpress.online'; // Cambiar a tu Odoo URL
+const VITE_URL = 'http://localhost:5173';
 
 // Tipos MIME
 const mimeTypes = {
@@ -33,154 +37,272 @@ const mimeTypes = {
     '.woff2': 'font/woff2'
 };
 
-// ============ FUNCIÓN PARA INICIAR PROXY ============
+// ==================== SERVIDOR HTML (5555) ====================
 
-let proxyProcess = null;
+function createHtmlServer() {
+    const publicDir = __dirname;
 
-function startOdooProxy() {
-    const proxyScript = path.join(__dirname, 'scripts', 'odoo', 'odoo-proxy.js');
-    
-    console.log(`\n[Server] 🔄 Iniciando Proxy Odoo en puerto ${PROXY_PORT}...`);
-    
-    proxyProcess = spawn('node', [proxyScript], {
-        stdio: 'inherit',
-        detached: false
-    });
+    return http.createServer((req, res) => {
+        console.log(`[${new Date().toLocaleTimeString()}] 5555 ${req.method} ${req.url}`);
 
-    proxyProcess.on('error', (err) => {
-        console.error(`[Server] ❌ Error iniciando proxy: ${err.message}`);
-    });
+        let filePath = path.join(publicDir, req.url);
 
-    proxyProcess.on('exit', (code) => {
-        if (code !== null) {
-            console.log(`[Server] ⚠️  Proxy salió con código ${code}`);
+        // Ruta raíz
+        if (req.url === '/' || req.url === '') {
+            filePath = path.join(publicDir, 'index.html');
         }
-    });
 
-    return proxyProcess;
-}
+        // Prevenir directory traversal
+        if (!filePath.startsWith(publicDir)) {
+            res.writeHead(403, { 'Content-Type': 'text/plain' });
+            res.end('Forbidden');
+            return;
+        }
 
-// Crear servidor
-const server = http.createServer((req, res) => {
-    // Loguear petición
-    console.log(`📥 ${new Date().toLocaleTimeString()} - ${req.method} ${req.url}`);
+        // Leer archivo
+        fs.readFile(filePath, (err, content) => {
+            if (err) {
+                const ext = path.extname(req.url);
+                const contentType = mimeTypes[ext] || 'text/plain';
 
-    // Ruta base
-    const basePath = __dirname;
-    let filePath = path.join(basePath, req.url);
-
-    // Prevenir traversal attacks
-    if (!filePath.startsWith(basePath)) {
-        res.writeHead(403, { 'Content-Type': 'text/plain' });
-        res.end('Forbidden');
-        return;
-    }
-
-    // Servir carpeta como index.html
-    if (req.url === '/' || req.url === '') {
-        filePath = path.join(basePath, 'delivery-cards.html');
-    }
-
-    // Extensión del archivo
-    const ext = path.extname(filePath).toLowerCase();
-    const contentType = mimeTypes[ext] || 'text/plain; charset=utf-8';
-
-    // Leer y servir archivo
-    fs.readFile(filePath, (err, content) => {
-        if (err) {
-            if (err.code === 'ENOENT') {
-                console.log(`   ❌ No encontrado: ${filePath}`);
                 res.writeHead(404, { 'Content-Type': 'text/html; charset=utf-8' });
                 res.end(`
                     <!DOCTYPE html>
                     <html>
-                    <head>
-                        <title>404 - No Encontrado</title>
-                        <style>
-                            body { font-family: Arial, sans-serif; margin: 50px; }
-                            h1 { color: #d32f2f; }
-                            a { color: #1976d2; text-decoration: none; }
-                        </style>
-                    </head>
-                    <body>
-                        <h1>404 - Página No Encontrada</h1>
-                        <p>No se pudo encontrar: <code>${req.url}</code></p>
-                        <p><a href="/">Volver al inicio</a></p>
+                    <head><title>404 - No Encontrado</title></head>
+                    <body style="font-family:Arial;margin:50px">
+                        <h1>404 - No Encontrado</h1>
+                        <p>${req.url}</p>
+                        <a href="/">Volver</a>
                     </body>
                     </html>
-                `, 'utf-8');
-            } else {
-                console.log(`   ❌ Error: ${err.message}`);
-                res.writeHead(500, { 'Content-Type': 'text/plain' });
-                res.end('Error interno del servidor');
+                `);
+                return;
             }
-        } else {
-            console.log(`   ✅ ${ext} (${content.length} bytes)`);
-            res.writeHead(200, { 'Content-Type': contentType });
+
+            const ext = path.extname(filePath).toLowerCase();
+            const contentType = mimeTypes[ext] || 'text/plain';
+
+            res.writeHead(200, { 
+                'Content-Type': contentType,
+                'Access-Control-Allow-Origin': '*'
+            });
             res.end(content);
+        });
+    });
+}
+
+// ==================== PROXY ODOO (9999) ====================
+
+function createOdooProxyServer() {
+    return http.createServer(async (req, res) => {
+        console.log(`[${new Date().toLocaleTimeString()}] 9999 ${req.method} ${req.url}`);
+
+        // CORS
+        res.setHeader('Access-Control-Allow-Origin', '*');
+        res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+        res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
+
+        if (req.method === 'OPTIONS') {
+            res.writeHead(200);
+            res.end();
+            return;
+        }
+
+        try {
+            // Leer body
+            let body = '';
+            if (req.method !== 'GET' && req.method !== 'HEAD') {
+                body = await new Promise((resolve, reject) => {
+                    let data = '';
+                    req.on('data', chunk => data += chunk);
+                    req.on('end', () => resolve(data));
+                    req.on('error', reject);
+                });
+            }
+
+            // Construir URL objetivo
+            const targetUrl = `${ODOO_URL}${req.url}`;
+            const targetUrlObj = new url.URL(targetUrl);
+
+            // Elegir protocolo basado en la URL
+            const requestModule = targetUrlObj.protocol === 'https:' ? 
+                (await import('https')).default : 
+                http;
+
+            // Hacer proxy
+            const proxyReq = requestModule.request({
+                hostname: targetUrlObj.hostname,
+                port: targetUrlObj.port,
+                path: targetUrlObj.pathname + targetUrlObj.search,
+                method: req.method,
+                headers: {
+                    ...req.headers,
+                    'Host': targetUrlObj.host
+                }
+            }, (proxyRes) => {
+                res.writeHead(proxyRes.statusCode, proxyRes.headers);
+                proxyRes.pipe(res);
+            });
+
+            proxyReq.on('error', (error) => {
+                console.error(`[9999 ERROR] ${error.message}`);
+                res.writeHead(502, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ error: 'Bad Gateway', message: error.message }));
+            });
+
+            if (body) proxyReq.write(body);
+            proxyReq.end();
+        } catch (error) {
+            console.error(`[9999 ERROR] ${error.message}`);
+            res.writeHead(500, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ error: 'Internal Server Error', message: error.message }));
         }
     });
-});
+}
 
-// Iniciar servidor
-server.listen(PORT_HTML, HOST, () => {
+// ==================== PROXY REACT/VITE (7777) ====================
+
+function createReactProxyServer() {
+    return http.createServer((req, res) => {
+        console.log(`[${new Date().toLocaleTimeString()}] 7777 ${req.method} ${req.url}`);
+
+        // CORS
+        res.setHeader('Access-Control-Allow-Origin', '*');
+        res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+        res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
+
+        if (req.method === 'OPTIONS') {
+            res.writeHead(200);
+            res.end();
+            return;
+        }
+
+        const proxyReq = http.request(
+            `${VITE_URL}${req.url}`,
+            {
+                method: req.method,
+                headers: req.headers
+            },
+            (proxyRes) => {
+                // Pasar headers de respuesta
+                res.writeHead(proxyRes.statusCode, proxyRes.headers);
+                proxyRes.pipe(res);
+            }
+        );
+
+        proxyReq.on('error', (error) => {
+            console.error(`[7777 ERROR] ${error.message}`);
+            res.writeHead(502, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ 
+                error: 'Vite Server Not Available',
+                message: 'Ejecuta: npm run dev',
+                details: error.message 
+            }));
+        });
+
+        req.pipe(proxyReq);
+    });
+}
+
+// ==================== INICIAR SERVIDORES ====================
+
+function startAllServers() {
     console.log(`
-╔═══════════════════════════════════════════════════════╗
-║  🚀 SERVIDOR RSEXPRESS - 3 INSTANCIAS ACTIVAS        ║
-╚═══════════════════════════════════════════════════════╝
-
-  🌐 SERVIDOR HTML (UI Testing):
-    📍 URL: http://${HOST}:${PORT_HTML}
-    📄 Archivos: delivery-cards.html, orders-from-crm.html, etc.
-    
-  ⚛️  REACT APP (Vite):
-    📍 URL: http://${HOST}:${PORT_REACT}
-    🔥 Hot Reload Habilitado
-    
-  🔄 PROXY ODOO:
-    📍 URL: http://${HOST}:${PORT_ODOO}
-    ✅ Estado: Iniciando...
-
-  📋 Archivos disponibles en 5555:
-    ✅ /delivery-cards.html - Entregas principales
-    ✅ /deliveries-perez-zeledon.html - Demo Pérez Zeledón
-    ✅ /delivery-card-demo.html - Demo de tarjetas
-    ✅ /fleet-dashboard.html - Dashboard de flota
-    ✅ /delivery-orders.html - Órdenes de entrega
-    ✅ /orders-from-crm.html - Órdenes desde CRM (requiere proxy)
-  
-  ⏱️  Presiona CTRL+C para detener TODOS los servidores
-
-═══════════════════════════════════════════════════════
+╔════════════════════════════════════════════════════════════════╗
+║        🚀 RSEXPRESS - MULTI-PORT SERVER CONFIGURATION          ║
+╚════════════════════════════════════════════════════════════════╝
     `);
-    
-    // Iniciar proxy de Odoo automáticamente
-    startOdooProxy();
-});
 
-// Manejar errores
-server.on('error', (err) => {
-    if (err.code === 'EADDRINUSE') {
-        console.error(`❌ Error: Puerto ${PORT_HTML} ya está en uso`);
+    // Servidor HTML
+    const htmlServer = createHtmlServer();
+    htmlServer.listen(PORT_HTML, HOST, () => {
+        console.log(`✅ Servidor HTML en http://${HOST}:${PORT_HTML}`);
+        console.log(`   • index.html`);
+        console.log(`   • delivery-cards.html`);
+        console.log(`   • Archivos estáticos\n`);
+    });
+
+    htmlServer.on('error', (err) => {
+        if (err.code === 'EADDRINUSE') {
+            console.error(`❌ Puerto ${PORT_HTML} ya está en uso. Intenta: lsof -i :${PORT_HTML}`);
+        } else {
+            console.error(`❌ Error servidor HTML:`, err);
+        }
         process.exit(1);
-    } else {
-        console.error('❌ Error del servidor:', err);
-    }
-});
+    });
 
-// Manejo de señales
-process.on('SIGINT', () => {
-    console.log('\n📛 Cerrando servidor y proxy...');
-    if (proxyProcess) {
-        proxyProcess.kill();
-    }
-    process.exit(0);
-});
+    // Servidor Odoo Proxy
+    const odooServer = createOdooProxyServer();
+    odooServer.listen(PORT_ODOO, HOST, () => {
+        console.log(`✅ Proxy Odoo en http://${HOST}:${PORT_ODOO}`);
+        console.log(`   • Proxy a: ${ODOO_URL}`);
+        console.log(`   • JSON-RPC API\n`);
+    });
 
-process.on('SIGTERM', () => {
-    console.log('\n📛 Cerrando servidor y proxy...');
-    if (proxyProcess) {
-        proxyProcess.kill();
-    }
-    process.exit(0);
-});
+    odooServer.on('error', (err) => {
+        if (err.code === 'EADDRINUSE') {
+            console.error(`❌ Puerto ${PORT_ODOO} ya está en uso`);
+        } else {
+            console.error(`❌ Error servidor Odoo:`, err);
+        }
+    });
+
+    // Servidor React Proxy
+    const reactServer = createReactProxyServer();
+    reactServer.listen(PORT_REACT, HOST, () => {
+        console.log(`✅ Proxy React en http://${HOST}:${PORT_REACT}`);
+        console.log(`   • Proxy a: ${VITE_URL}`);
+        console.log(`   • ⚡ Requiere: npm run dev\n`);
+    });
+
+    reactServer.on('error', (err) => {
+        if (err.code === 'EADDRINUSE') {
+            console.error(`❌ Puerto ${PORT_REACT} ya está en uso`);
+        } else {
+            console.error(`❌ Error servidor React:`, err);
+        }
+    });
+
+    // Instrucciones
+    console.log(`
+────────────────────────────────────────────────────────────────
+📋 CÓMO USAR:
+
+  Terminal 1 - Vite Dev Server:
+    $ npm run dev
+
+  Terminal 2 - Multi-Server:
+    $ node server.js
+
+  Abrir en navegador:
+    🟦 HTML UI:        http://localhost:${PORT_HTML}
+    🟢 React App:      http://localhost:${PORT_REACT}
+    🟠 Odoo Proxy:     http://localhost:${PORT_ODOO}
+
+────────────────────────────────────────────────────────────────
+  Presiona CTRL+C para detener los servidores
+────────────────────────────────────────────────────────────────
+    `);
+
+    // Manejo de señales
+    process.on('SIGINT', () => {
+        console.log('\n\n🛑 Cerrando servidores...');
+        htmlServer.close();
+        odooServer.close();
+        reactServer.close();
+        process.exit(0);
+    });
+
+    process.on('SIGTERM', () => {
+        console.log('\n\n🛑 Cerrando servidores...');
+        htmlServer.close();
+        odooServer.close();
+        reactServer.close();
+        process.exit(0);
+    });
+}
+
+// ==================== INICIAR ====================
+
+startAllServers();

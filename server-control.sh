@@ -1,14 +1,12 @@
 #!/bin/bash
 
-# 🚀 RSExpress Server Control Script
-# Facilita iniciar, detener y monitorear el servidor
+##############################################################
+# 🚀 RSExpress Multi-Server Control Script
+# Maneja los 3 servidores: HTML (5555), React (7777), Proxy (9999)
+##############################################################
 
-set -e
-
-PORT_SERVER=5555
-PORT_PROXY=9999
-SERVER_URL="http://localhost:$PORT_SERVER"
-PROXY_URL="http://localhost:$PORT_PROXY"
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+PROJECT_ROOT="$SCRIPT_DIR"
 
 # Colores para output
 RED='\033[0;31m'
@@ -17,7 +15,146 @@ YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
-# Funciones helper
+# Función de banner
+print_banner() {
+    echo -e "${BLUE}╔════════════════════════════════════════════════╗${NC}"
+    echo -e "${BLUE}║  🚀 RSExpress - Multi-Server Control          ║${NC}"
+    echo -e "${BLUE}║  5555: HTML UI  | 7777: React  | 9999: Proxy  ║${NC}"
+    echo -e "${BLUE}╚════════════════════════════════════════════════╝${NC}"
+}
+
+# Función para verificar puertos
+check_port() {
+    local port=$1
+    local service=$2
+    
+    if lsof -Pi :$port -sTCP:LISTEN -t >/dev/null 2>&1 ; then
+        echo -e "${GREEN}✓${NC} Puerto $port ($service) está ocupado"
+        return 0
+    else
+        echo -e "${RED}✗${NC} Puerto $port ($service) está libre"
+        return 1
+    fi
+}
+
+# Función para listar estado
+status() {
+    print_banner
+    echo ""
+    echo -e "${BLUE}📊 Estado de Servidores:${NC}"
+    echo "─────────────────────────────────────────"
+    
+    echo -e "\n${YELLOW}📄 HTML Server (Puerto 5555)${NC}"
+    check_port 5555 "HTML" && echo "   URL: http://localhost:5555" || echo "   Estado: DETENIDO"
+    
+    echo -e "\n${YELLOW}⚛️  React App (Puerto 7777)${NC}"
+    check_port 7777 "React" && echo "   URL: http://localhost:7777" || echo "   Estado: DETENIDO"
+    
+    echo -e "\n${YELLOW}🔀 Odoo Proxy (Puerto 9999)${NC}"
+    check_port 9999 "Proxy" && echo "   URL: http://localhost:9999" || echo "   Estado: DETENIDO"
+    
+    echo ""
+}
+
+# Función para iniciar todos
+start_all() {
+    print_banner
+    echo -e "\n${YELLOW}🚀 Iniciando todos los servidores...${NC}\n"
+    
+    cd "$PROJECT_ROOT"
+    npm run dev
+}
+
+# Función para detener todos
+stop_all() {
+    print_banner
+    echo -e "\n${YELLOW}⏹️  Deteniendo servidores...${NC}\n"
+    
+    # Matar procesos Node
+    pkill -f "node server.js" 2>/dev/null && echo -e "${GREEN}✓${NC} HTML Server detenido" || true
+    pkill -f "vite" 2>/dev/null && echo -e "${GREEN}✓${NC} React App detenido" || true
+    pkill -f "odoo-proxy" 2>/dev/null && echo -e "${GREEN}✓${NC} Proxy detenido" || true
+    
+    echo -e "\n${GREEN}✓ Todos los servidores han sido detenidos${NC}\n"
+}
+
+# Función para reiniciar
+restart() {
+    stop_all
+    sleep 2
+    start_all
+}
+
+# Función para abrir URLs
+open_servers() {
+    echo -e "${YELLOW}🌐 Abriendo servidores en el navegador...${NC}\n"
+    
+    # Detectar sistema operativo
+    if [[ "$OSTYPE" == "linux-gnu"* ]]; then
+        xdg-open http://localhost:5555 2>/dev/null &
+        xdg-open http://localhost:7777 2>/dev/null &
+        echo -e "${GREEN}✓ Navegadores abiertos${NC}\n"
+    elif [[ "$OSTYPE" == "darwin"* ]]; then
+        open http://localhost:5555 2>/dev/null &
+        open http://localhost:7777 2>/dev/null &
+        echo -e "${GREEN}✓ Navegadores abiertos${NC}\n"
+    else
+        echo -e "${YELLOW}⚠ Por favor abre manualmente:${NC}"
+        echo "  • HTML: http://localhost:5555"
+        echo "  • React: http://localhost:7777"
+        echo ""
+    fi
+}
+
+# Menú principal
+show_menu() {
+    echo ""
+    echo -e "${BLUE}Selecciona una opción:${NC}"
+    echo "  1) Iniciar todos los servidores"
+    echo "  2) Detener todos los servidores"
+    echo "  3) Ver estado"
+    echo "  4) Reiniciar todos"
+    echo "  5) Abrir en navegador"
+    echo "  6) Salir"
+    echo ""
+    read -p "Opción: " choice
+    
+    case $choice in
+        1) start_all ;;
+        2) stop_all ;;
+        3) status ;;
+        4) restart ;;
+        5) open_servers ;;
+        6) echo -e "${GREEN}¡Hasta luego!${NC}\n"; exit 0 ;;
+        *) echo -e "${RED}Opción inválida${NC}" ;;
+    esac
+}
+
+# Main
+if [[ $# -eq 0 ]]; then
+    # Modo interactivo
+    while true; do
+        show_menu
+    done
+else
+    # Modo comando
+    case $1 in
+        start) start_all ;;
+        stop) stop_all ;;
+        restart) restart ;;
+        status) status ;;
+        open) open_servers ;;
+        *) 
+            echo "Uso: $0 {start|stop|restart|status|open}"
+            echo ""
+            echo "Ejemplos:"
+            echo "  $0 start          # Inicia todos los servidores"
+            echo "  $0 status         # Muestra estado"
+            echo "  $0 stop           # Detiene todo"
+            exit 1
+            ;;
+    esac
+fi
 print_banner() {
     echo -e "${BLUE}"
     echo "╔═══════════════════════════════════════════════════════╗"
