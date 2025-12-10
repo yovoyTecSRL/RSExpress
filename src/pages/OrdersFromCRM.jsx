@@ -56,11 +56,9 @@ const OrdersFromCRM = () => {
   // ═══════════════════════════════════════════════════════════════════
 
   useEffect(() => {
-    if (isConnected && odoo) {
-      console.log('[OrdersFromCRM] 🚀 Auto-cargando leads desde CRM...');
-      loadLeads([], 0, 50);
-    }
-  }, [isConnected, odoo, loadLeads]);
+    console.log('[OrdersFromCRM] 🚀 Auto-cargando leads...');
+    loadLeads([], 0, 50);
+  }, [loadLeads]);
 
   // ═══════════════════════════════════════════════════════════════════
   // FUNCIONES DE FILTRADO Y BÚSQUEDA

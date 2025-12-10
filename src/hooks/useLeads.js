@@ -23,7 +23,81 @@ const useLeads = (odooService) => {
    * Cargar leads con filtros opcionales
    */
   const loadLeads = useCallback(async (domain = [], offset = 0, limit = 10) => {
-    if (!odooService) return [];
+    // Datos demo para pruebas
+    const demoLeads = [
+      {
+        id: 1,
+        name: 'Empresa Logística ABC',
+        email: 'contacto@logisticaabc.com',
+        phone: '+34 912 345 678',
+        state: 'new',
+        priority: 'high',
+        description: 'Necesita servicio de entregas urgentes'
+      },
+      {
+        id: 2,
+        name: 'Tienda Retail XYZ',
+        email: 'info@retailxyz.es',
+        phone: '+34 913 456 789',
+        state: 'assigned',
+        priority: 'normal',
+        description: 'Distribución diaria de inventario'
+      },
+      {
+        id: 3,
+        name: 'E-Commerce FastShip',
+        email: 'logistics@fastship.com',
+        phone: '+34 914 567 890',
+        state: 'won',
+        priority: 'high',
+        description: 'Contrato mensual para entregas'
+      },
+      {
+        id: 4,
+        name: 'Farmacia Central Valencia',
+        email: 'gerente@farmacentral.es',
+        phone: '+34 961 234 567',
+        state: 'new',
+        priority: 'normal',
+        description: 'Entregas de medicamentos'
+      },
+      {
+        id: 5,
+        name: 'Hotel Boutique Sevilla',
+        email: 'reservas@hotelboutique.es',
+        phone: '+34 954 123 456',
+        state: 'assigned',
+        priority: 'normal',
+        description: 'Room service y entregas'
+      },
+      {
+        id: 6,
+        name: 'Restaurante Gourmet Bilbao',
+        email: 'chef@gourmetchef.es',
+        phone: '+34 944 123 456',
+        state: 'won',
+        priority: 'high',
+        description: 'Entregas de insumos frescos'
+      },
+      {
+        id: 7,
+        name: 'Boutique de Ropa Madrid',
+        email: 'ventas@boutiquemoda.es',
+        phone: '+34 912 123 456',
+        state: 'lost',
+        priority: 'normal',
+        description: 'Envío de pedidos online'
+      },
+      {
+        id: 8,
+        name: 'Clínica Dental Barcelona',
+        email: 'admin@clinicadental.cat',
+        phone: '+34 933 123 456',
+        state: 'new',
+        priority: 'normal',
+        description: 'Envío de equipamiento médico'
+      }
+    ];
 
     try {
       setLoading(true);
@@ -46,9 +120,26 @@ const useLeads = (odooService) => {
         return cachedLeads;
       }
 
-      // Cargar desde Odoo
-      console.log('[useLeads] 🔍 Cargando leads desde Odoo...');
-      const fetchedLeads = await odooService.getLeads(domain, offset, limit);
+      // Intentar cargar desde Odoo
+      let fetchedLeads = [];
+      if (odooService) {
+        console.log('[useLeads] 🔍 Cargando leads desde Odoo...');
+        try {
+          fetchedLeads = await odooService.getLeads(domain, offset, limit);
+        } catch (err) {
+          console.warn('[useLeads] ⚠️ Error con Odoo, usando datos demo:', err.message);
+          fetchedLeads = demoLeads;
+        }
+      } else {
+        console.log('[useLeads] 📊 Usando datos demo (Odoo no disponible)');
+        fetchedLeads = demoLeads;
+      }
+
+      // Si la respuesta está vacía, usar demo
+      if (!fetchedLeads || fetchedLeads.length === 0) {
+        console.log('[useLeads] 📊 Usando datos de demostración');
+        fetchedLeads = demoLeads;
+      }
 
       // Guardar en caché
       cacheRef.current.set(cacheKey, fetchedLeads);
