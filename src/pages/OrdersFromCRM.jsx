@@ -9,7 +9,7 @@ import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import useOdoo from '@hooks/useOdoo';
 import useLeads from '@hooks/useLeads';
 import useOrders from '@hooks/useOrders';
-import '@styles/orders-from-crm.css';
+import '@styles/orders-from-crm-new.css';
 
 const OrdersFromCRM = () => {
   // ═══════════════════════════════════════════════════════════════════

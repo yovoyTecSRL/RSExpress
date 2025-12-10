@@ -126,6 +126,15 @@ const useLeads = (odooService) => {
         console.log('[useLeads] 🔍 Cargando leads desde Odoo...');
         try {
           fetchedLeads = await odooService.getLeads(domain, offset, limit);
+          console.log('[useLeads] ✅ Leads cargados desde Odoo:', fetchedLeads.length);
+          
+          // Si Odoo retorna datos, usarlos directamente
+          if (fetchedLeads && fetchedLeads.length > 0) {
+            console.log('[useLeads] 📊 Usando leads desde Odoo CRM');
+          } else {
+            console.log('[useLeads] ⚠️ Odoo retornó resultados vacíos, usando datos demo');
+            fetchedLeads = demoLeads;
+          }
         } catch (err) {
           console.warn('[useLeads] ⚠️ Error con Odoo, usando datos demo:', err.message);
           fetchedLeads = demoLeads;
@@ -137,7 +146,7 @@ const useLeads = (odooService) => {
 
       // Si la respuesta está vacía, usar demo
       if (!fetchedLeads || fetchedLeads.length === 0) {
-        console.log('[useLeads] 📊 Usando datos de demostración');
+        console.log('[useLeads] 📊 Usando datos de demostración (fallback)');
         fetchedLeads = demoLeads;
       }
 
