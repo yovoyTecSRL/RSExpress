@@ -10,6 +10,8 @@ import useOdoo from '@hooks/useOdoo';
 import useLeads from '@hooks/useLeads';
 import useOrders from '@hooks/useOrders';
 import '@styles/orders-from-crm-new.css';
+import '@styles/delivery-cards.css';
+import 'assets/delivery-cards-page.css';
 
 const OrdersFromCRM = () => {
   // ═══════════════════════════════════════════════════════════════════
