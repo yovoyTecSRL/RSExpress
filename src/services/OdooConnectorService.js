@@ -202,20 +202,79 @@ class OdooConnectorService {
    */
   async getLeadStats() {
     try {
-      const stats = await this.callOdooAPI('object', 'execute_kw', [
+      // Usar searchCount en lugar de read_group para evitar errores de parámetros
+      const stats = {
+        total: 0,
+        new: 0,
+        assigned: 0,
+        won: 0,
+        lost: 0
+      };
+
+      // Contar total de leads
+      const totalCount = await this.callOdooAPI('object', 'execute_kw', [
         this.config.database,
         this.config.uid,
         this.config.token,
         'crm.lead',
-        'read_group',
-        [['active', '=', true]],
-        ['state']
+        'search_count',
+        []
       ]);
 
-      return stats || [];
+      stats.total = totalCount || 0;
+
+      // Contar por estado
+      const newCount = await this.callOdooAPI('object', 'execute_kw', [
+        this.config.database,
+        this.config.uid,
+        this.config.token,
+        'crm.lead',
+        'search_count',
+        [['state', '=', 'new']]
+      ]);
+      stats.new = newCount || 0;
+
+      const assignedCount = await this.callOdooAPI('object', 'execute_kw', [
+        this.config.database,
+        this.config.uid,
+        this.config.token,
+        'crm.lead',
+        'search_count',
+        [['state', '=', 'assigned']]
+      ]);
+      stats.assigned = assignedCount || 0;
+
+      const wonCount = await this.callOdooAPI('object', 'execute_kw', [
+        this.config.database,
+        this.config.uid,
+        this.config.token,
+        'crm.lead',
+        'search_count',
+        [['state', '=', 'won']]
+      ]);
+      stats.won = wonCount || 0;
+
+      const lostCount = await this.callOdooAPI('object', 'execute_kw', [
+        this.config.database,
+        this.config.uid,
+        this.config.token,
+        'crm.lead',
+        'search_count',
+        [['state', '=', 'lost']]
+      ]);
+      stats.lost = lostCount || 0;
+
+      return stats;
     } catch (error) {
       console.error('[OdooService] Error obteniendo stats:', error);
-      return [];
+      // Retornar stats vacías en lugar de array vacío
+      return {
+        total: 0,
+        new: 0,
+        assigned: 0,
+        won: 0,
+        lost: 0
+      };
     }
   }
 
