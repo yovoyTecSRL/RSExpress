@@ -1,19 +1,24 @@
 /**
- * FleetDashboard Component
- * Componente React para dashboard de flota y conductores
- * 
- * Migración de: fleet-dashboard.html
+ * FleetDashboard Component - Fleet Vehicles Management
+ * Componente React para gestionar vehículos desde el modelo fleet.vehicle de Odoo
+ * Campos: id, name, license_plate, driver_id, state, create_uid, create_date
  */
 
 import React, { useEffect, useState, useCallback } from 'react';
 import useOdoo from '@hooks/useOdoo';
-import useFleet from '@hooks/useFleet';
 import '@styles/fleet-dashboard.css';
 
 const FleetDashboard = () => {
-  const [mapCenter, setMapCenter] = useState({ lat: 40.4168, lng: -3.7038 }); // Madrid
-  const [selectedDriver, setSelectedDriver] = useState(null);
-  const [refreshInterval, setRefreshInterval] = useState(5000); // 5s
+  // ═══════════════════════════════════════════════════════════════════
+  // ESTADOS
+  // ═══════════════════════════════════════════════════════════════════
+
+  const [vehicles, setVehicles] = useState([]);
+  const [filteredVehicles, setFilteredVehicles] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filterState, setFilterState] = useState('all');
 
   // Hooks
   const { odoo, isConnected } = useOdoo({
@@ -23,285 +28,271 @@ const FleetDashboard = () => {
     token: '1fc63a72dcf97e88aab89c5a8a54dc0eac25cb9b'
   });
 
-  const {
-    drivers,
-    vehicles,
-    positions,
-    loading,
-    traccarConnected,
-    loadDrivers,
-    loadVehicles,
-    loadTraccarData,
-    getDriverPosition,
-    connectTraccarWebSocket,
-    getFleetSummary,
-    getTraccarStats
-  } = useFleet(odoo, {
-    baseURL: 'http://localhost:8082',
-    username: 'admin',
-    password: 'admin'
-  });
+  // ═══════════════════════════════════════════════════════════════════
+  // CARGAR VEHÍCULOS
+  // ═══════════════════════════════════════════════════════════════════
 
-  /**
-   * Cargar datos iniciales cuando se conecte
-   */
-  useEffect(() => {
-    let mounted = true;
-    
-    if (isConnected && odoo && mounted) {
-      console.log('[FleetDashboard] 🚀 Cargando datos iniciales...');
-      loadDrivers();
-      loadVehicles();
-      loadTraccarData();
-
-      // Intentar conectar WebSocket
-      connectTraccarWebSocket().catch(err => {
-        console.warn('[FleetDashboard] WebSocket no disponible:', err);
-      });
+  const loadVehicles = useCallback(async () => {
+    if (!odoo || !isConnected) {
+      console.log('[FleetDashboard] ⚠️ Odoo no conectado');
+      return;
     }
 
-    return () => {
-      mounted = false;
+    try {
+      setLoading(true);
+      setError(null);
+      console.log('[FleetDashboard] 🚗 Cargando vehículos desde fleet.vehicle...');
+
+      const result = await odoo.callOdooAPI('object', 'execute_kw', [
+        'odoo19',
+        5,
+        '1fc63a72dcf97e88aab89c5a8a54dc0eac25cb9b',
+        'fleet.vehicle',
+        'search_read',
+        [],
+        {
+          fields: ['id', 'name', 'license_plate', 'driver_id', 'state', 'create_uid', 'create_date'],
+          order: 'id DESC',
+          limit: 100
+        }
+      ]);
+
+      console.log('[FleetDashboard] ✅ Vehículos cargados:', result.length);
+      setVehicles(result || []);
+    } catch (err) {
+      console.error('[FleetDashboard] Error cargando vehículos:', err);
+      setError(err.message);
+      setVehicles([]);
+    } finally {
+      setLoading(false);
+    }
+  }, [odoo, isConnected]);
+
+  useEffect(() => {
+    loadVehicles();
+  }, [loadVehicles]);
+
+  // ═══════════════════════════════════════════════════════════════════
+  // FILTRADO Y BÚSQUEDA
+  // ═══════════════════════════════════════════════════════════════════
+
+  useEffect(() => {
+    let filtered = vehicles;
+
+    // Filtro de estado
+    if (filterState !== 'all') {
+      filtered = filtered.filter(vehicle => vehicle.state === filterState);
+    }
+
+    // Filtro de búsqueda
+    if (searchTerm) {
+      const term = searchTerm.toLowerCase();
+      filtered = filtered.filter(vehicle =>
+        vehicle.name.toLowerCase().includes(term) ||
+        (vehicle.license_plate && vehicle.license_plate.toLowerCase().includes(term)) ||
+        (vehicle.driver_id && Array.isArray(vehicle.driver_id) && vehicle.driver_id[1].toLowerCase().includes(term))
+      );
+    }
+
+    setFilteredVehicles(filtered);
+  }, [vehicles, filterState, searchTerm]);
+
+  // ═══════════════════════════════════════════════════════════════════
+  // FUNCIONES AUXILIARES
+  // ═══════════════════════════════════════════════════════════════════
+
+  const renderStateBadge = (state) => {
+    const badges = {
+      active: { class: 'badge-activo', label: 'Activo', icon: '✅' },
+      inactive: { class: 'badge-inactivo', label: 'Inactivo', icon: '⏸️' },
+      maintenance: { class: 'badge-mantenimiento', label: 'Mantenimiento', icon: '🔧' },
+      retired: { class: 'badge-retirado', label: 'Retirado', icon: '❌' }
     };
-  }, [isConnected]);
-
-  /**
-   * Actualizar datos periódicamente
-   */
-  useEffect(() => {
-    if (!isConnected) return;
-
-    const interval = setInterval(() => {
-      loadTraccarData();
-    }, refreshInterval);
-
-    return () => clearInterval(interval);
-  }, [refreshInterval, isConnected]);
-
-  /**
-   * Obtener información del conductor
-   */
-  const getDriverStats = useCallback((driverId) => {
-    const driver = drivers.find(d => d.id === driverId);
-    const position = getDriverPosition(driverId);
-    const vehicle = vehicles.find(v => v.driverId === driverId);
-
-    return { driver, position, vehicle };
-  }, [drivers, vehicles, getDriverPosition]);
-
-  /**
-   * Cambiar conductor seleccionado
-   */
-  const handleSelectDriver = (driverId) => {
-    const stats = getDriverStats(driverId);
-    if (stats.position) {
-      setMapCenter({
-        lat: stats.position.latitude,
-        lng: stats.position.longitude
-      });
-    }
-    setSelectedDriver(driverId);
+    const badge = badges[state] || badges.active;
+    return <span className={`state-badge ${badge.class}`}>{badge.icon} {badge.label}</span>;
   };
 
-  const fleetSummary = getFleetSummary();
-  const traccarStats = getTraccarStats();
+  const getDriverName = (driverId) => {
+    if (Array.isArray(driverId)) {
+      return driverId[1];
+    }
+    return 'Sin asignar';
+  };
+
+  const getCreatedByName = (createUid) => {
+    if (Array.isArray(createUid)) {
+      return createUid[1];
+    }
+    return createUid || 'N/A';
+  };
+
+  const formatDate = (dateString) => {
+    if (!dateString) return 'N/A';
+    return new Date(dateString).toLocaleDateString('es-ES');
+  };
+
+  // ═══════════════════════════════════════════════════════════════════
+  // RENDER
+  // ═══════════════════════════════════════════════════════════════════
 
   return (
     <div className="fleet-dashboard">
-      {/* Header */}
-      <div className="dashboard-header">
-        <h1>🚗 Dashboard de Flota</h1>
-        <div className="header-controls">
-          <label className="refresh-control">
-            Actualizar cada:
-            <select
-              value={refreshInterval}
-              onChange={(e) => setRefreshInterval(Number(e.target.value))}
+      {/* HEADER */}
+      <div className="page-header">
+        <div className="header-content">
+          <div className="header-title">
+            <h1>🚗 Flota de Vehículos</h1>
+            <p>Gestiona todos los vehículos de la flota desde Odoo</p>
+          </div>
+          <div className="header-actions">
+            <button 
+              className="btn btn-primary"
+              onClick={loadVehicles}
+              disabled={loading}
             >
-              <option value={2000}>2s</option>
-              <option value={5000}>5s</option>
-              <option value={10000}>10s</option>
-              <option value={30000}>30s</option>
-            </select>
-          </label>
-          <span className={`traccar-status ${traccarConnected ? 'connected' : 'disconnected'}`}>
-            {traccarConnected ? '🟢 Traccar Online' : '🔴 Traccar Offline'}
+              {loading ? '⏳ Cargando...' : '🔄 Refrescar'}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* TOOLBAR */}
+      <div className="toolbar">
+        <div className="search-bar">
+          <input
+            type="text"
+            placeholder="🔎 Buscar por vehículo, placa o conductor..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="search-input"
+          />
+        </div>
+
+        <div className="filter-bar">
+          <select
+            value={filterState}
+            onChange={(e) => setFilterState(e.target.value)}
+            className="filter-select"
+          >
+            <option value="all">Todos los estados</option>
+            <option value="active">Activo</option>
+            <option value="inactive">Inactivo</option>
+            <option value="maintenance">Mantenimiento</option>
+            <option value="retired">Retirado</option>
+          </select>
+        </div>
+
+        <div className="stats-info">
+          <span className="stat-item">
+            <span className="stat-label">Total:</span>
+            <span className="stat-value">{filteredVehicles.length}</span>
+          </span>
+          <span className="stat-item">
+            <span className="stat-label">Activos:</span>
+            <span className="stat-value">{filteredVehicles.filter(v => v.state === 'active').length}</span>
           </span>
         </div>
       </div>
 
-      {/* Stats Overview */}
-      {fleetSummary && (
-        <div className="stats-grid">
-          <div className="stat-card">
-            <div className="stat-icon">👥</div>
-            <div className="stat-content">
-              <h3>Conductores</h3>
-              <p className="stat-value">{fleetSummary.totalDrivers}</p>
-              <p className="stat-detail">{fleetSummary.activeDrivers} activos</p>
-            </div>
-          </div>
-
-          <div className="stat-card">
-            <div className="stat-icon">🚗</div>
-            <div className="stat-content">
-              <h3>Vehículos</h3>
-              <p className="stat-value">{fleetSummary.totalVehicles}</p>
-            </div>
-          </div>
-
-          <div className="stat-card">
-            <div className="stat-icon">📦</div>
-            <div className="stat-content">
-              <h3>Órdenes Asignadas</h3>
-              <p className="stat-value">{fleetSummary.totalAssignedOrders}</p>
-              <p className="stat-detail">{fleetSummary.driversWithOrders} conductores</p>
-            </div>
-          </div>
-
-          {traccarStats && (
-            <>
-              <div className="stat-card">
-                <div className="stat-icon">🟢</div>
-                <div className="stat-content">
-                  <h3>En Movimiento</h3>
-                  <p className="stat-value">{traccarStats.moving}</p>
-                </div>
-              </div>
-
-              <div className="stat-card">
-                <div className="stat-icon">🔴</div>
-                <div className="stat-content">
-                  <h3>Parados</h3>
-                  <p className="stat-value">{traccarStats.stopped}</p>
-                </div>
-              </div>
-            </>
-          )}
+      {/* LOADING STATE */}
+      {loading && (
+        <div className="loading-state">
+          <div className="spinner"></div>
+          <p>Cargando vehículos...</p>
         </div>
       )}
 
-      <div className="dashboard-content">
-        {/* Drivers List */}
-        <div className="drivers-panel">
-          <h2>👥 Conductores</h2>
-          {loading && <p className="loading">⏳ Cargando...</p>}
-
-          <div className="drivers-list">
-            {drivers && drivers.length > 0 ? (
-              drivers.map((driver) => {
-                const { position, vehicle } = getDriverStats(driver.id);
-                const isSelected = selectedDriver === driver.id;
-
-                return (
-                  <div
-                    key={driver.id}
-                    className={`driver-item ${isSelected ? 'selected' : ''} ${
-                      position && position.speed > 0 ? 'moving' : 'stopped'
-                    }`}
-                    onClick={() => handleSelectDriver(driver.id)}
-                  >
-                    <div className="driver-header">
-                      <h3>{driver.name}</h3>
-                      <span className={`status ${position ? 'online' : 'offline'}`}>
-                        {position ? '🟢 Online' : '⚫ Offline'}
-                      </span>
-                    </div>
-
-                    <p className="driver-contact">📞 {driver.phone}</p>
-
-                    {vehicle && (
-                      <p className="driver-vehicle">
-                        🚗 {vehicle.model}
-                      </p>
-                    )}
-
-                    {position && (
-                      <div className="driver-position">
-                        <p>📍 Lat: {position.latitude.toFixed(4)}</p>
-                        <p>📍 Lon: {position.longitude.toFixed(4)}</p>
-                        <p>⚡ Vel: {position.speed} km/h</p>
-                      </div>
-                    )}
-
-                    {driver.assignedOrders && driver.assignedOrders.length > 0 && (
-                      <p className="driver-orders">
-                        📦 {driver.assignedOrders.length} órdenes
-                      </p>
-                    )}
-                  </div>
-                );
-              })
-            ) : (
-              <p className="no-data">ℹ️ No hay conductores disponibles</p>
-            )}
-          </div>
+      {/* ERROR STATE */}
+      {error && (
+        <div className="error-state">
+          <p>⚠️ Error al cargar los vehículos: {error}</p>
         </div>
+      )}
 
-        {/* Map & Details */}
-        <div className="map-panel">
-          <h2>📍 Mapa de Flota</h2>
+      {/* EMPTY STATE */}
+      {!loading && filteredVehicles.length === 0 && (
+        <div className="empty-state">
+          <div className="empty-icon">🚗</div>
+          <h3>No hay vehículos para mostrar</h3>
+          <p>Intenta ajustar los filtros o crea un nuevo vehículo en Odoo</p>
+        </div>
+      )}
 
-          {/* Map Container */}
-          <div className="map-container">
-            <div className="map-placeholder">
-              <p>🗺️ Mapa de flotas</p>
-              <p className="map-center">
-                Centro: {mapCenter.lat.toFixed(4)}, {mapCenter.lng.toFixed(4)}
-              </p>
-              {selectedDriver && (
-                <div className="selected-info">
-                  <p>👁️ Siguiendo a: Conductor {selectedDriver}</p>
-                </div>
-              )}
+      {/* TABLE */}
+      {!loading && filteredVehicles.length > 0 && (
+        <div className="delivery-table vehicles-table">
+          <table>
+            <thead>
+              <tr>
+                <th className="col-id">ID</th>
+                <th className="col-name">Vehículo</th>
+                <th className="col-plate">Placa</th>
+                <th className="col-driver">Conductor</th>
+                <th className="col-state">Estado</th>
+                <th className="col-created">Creado por</th>
+                <th className="col-date">Fecha</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredVehicles.map(vehicle => (
+                <tr key={vehicle.id} className="vehicle-row">
+                  <td className="col-id">
+                    <strong>#{vehicle.id}</strong>
+                  </td>
+                  <td className="col-name">
+                    <div className="vehicle-name">
+                      <strong>🚗 {vehicle.name}</strong>
+                    </div>
+                  </td>
+                  <td className="col-plate">
+                    <span className="plate-badge">
+                      {vehicle.license_plate || 'N/A'}
+                    </span>
+                  </td>
+                  <td className="col-driver">
+                    <span>{getDriverName(vehicle.driver_id)}</span>
+                  </td>
+                  <td className="col-state">
+                    {renderStateBadge(vehicle.state)}
+                  </td>
+                  <td className="col-created">
+                    <span>{getCreatedByName(vehicle.create_uid)}</span>
+                  </td>
+                  <td className="col-date">
+                    <span className="date-value">
+                      {formatDate(vehicle.create_date)}
+                    </span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {/* STATS FOOTER */}
+      {filteredVehicles.length > 0 && (
+        <div className="vehicles-footer">
+          <div className="footer-stats">
+            <div className="stat-item">
+              <span className="stat-label">Total de Vehículos:</span>
+              <span className="stat-value">{filteredVehicles.length}</span>
+            </div>
+            <div className="stat-item">
+              <span className="stat-label">Activos:</span>
+              <span className="stat-value active">
+                {filteredVehicles.filter(v => v.state === 'active').length}
+              </span>
+            </div>
+            <div className="stat-item">
+              <span className="stat-label">En Mantenimiento:</span>
+              <span className="stat-value maintenance">
+                {filteredVehicles.filter(v => v.state === 'maintenance').length}
+              </span>
             </div>
           </div>
-
-          {/* Driver Details */}
-          {selectedDriver && (
-            <div className="driver-details">
-              <h3>📋 Detalles del Conductor</h3>
-              {(() => {
-                const { driver, position, vehicle } = getDriverStats(selectedDriver);
-                return (
-                  <>
-                    <div className="detail-row">
-                      <span className="label">Nombre:</span>
-                      <span className="value">{driver?.name}</span>
-                    </div>
-                    <div className="detail-row">
-                      <span className="label">Teléfono:</span>
-                      <span className="value">{driver?.phone}</span>
-                    </div>
-                    <div className="detail-row">
-                      <span className="label">Vehículo:</span>
-                      <span className="value">{vehicle?.model || 'N/A'}</span>
-                    </div>
-                    <div className="detail-row">
-                      <span className="label">Placa:</span>
-                      <span className="value">{vehicle?.plate || 'N/A'}</span>
-                    </div>
-                    {position && (
-                      <>
-                        <div className="detail-row">
-                          <span className="label">Velocidad:</span>
-                          <span className="value">{position.speed} km/h</span>
-                        </div>
-                        <div className="detail-row">
-                          <span className="label">Última actualización:</span>
-                          <span className="value">
-                            {new Date(position.timestamp).toLocaleTimeString()}
-                          </span>
-                        </div>
-                      </>
-                    )}
-                  </>
-                );
-              })()}
-            </div>
-          )}
         </div>
-      </div>
+      )}
     </div>
   );
 };
