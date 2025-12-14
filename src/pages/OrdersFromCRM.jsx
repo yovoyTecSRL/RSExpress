@@ -276,6 +276,18 @@ const OrdersFromCRM = () => {
             <span className="value">{lead.description.substring(0, 60)}...</span>
           </div>
         )}
+        {lead.create_uid && (
+          <div className="info-row">
+            <span className="label">👤 Creado por:</span>
+            <span className="value">{Array.isArray(lead.create_uid) ? lead.create_uid[1] : lead.create_uid}</span>
+          </div>
+        )}
+        {lead.create_date && (
+          <div className="info-row">
+            <span className="label">📅 Fecha creación:</span>
+            <span className="value">{new Date(lead.create_date).toLocaleDateString('es-ES')}</span>
+          </div>
+        )}
       </div>
 
       <div className="card-footer">
@@ -310,6 +322,12 @@ const OrdersFromCRM = () => {
           <div>📱 {lead.phone || 'N/A'}</div>
           <div>🏢 {lead.company || 'N/A'}</div>
         </div>
+      </td>
+      <td className="col-created">
+        {lead.create_uid ? (Array.isArray(lead.create_uid) ? lead.create_uid[1] : lead.create_uid) : 'N/A'}
+      </td>
+      <td className="col-date">
+        {lead.create_date ? new Date(lead.create_date).toLocaleDateString('es-ES') : 'N/A'}
       </td>
       <td className="col-actions">
         <button 
@@ -533,6 +551,8 @@ const OrdersFromCRM = () => {
                     <th className="col-state">Estado</th>
                     <th className="col-priority">Prioridad</th>
                     <th className="col-contact">Contacto</th>
+                    <th className="col-created">Creado por</th>
+                    <th className="col-date">Fecha</th>
                     <th className="col-actions">Acciones</th>
                   </tr>
                 </thead>

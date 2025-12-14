@@ -135,7 +135,7 @@ class OdooConnectorService {
         'search_read',
         domain,
         {
-          fields: ['id', 'name', 'email', 'phone', 'company_id', 'state'],
+          fields: ['id', 'name', 'email', 'phone', 'company_id', 'state', 'create_uid', 'create_date'],
           offset: offset,
           limit: limit,
           order: 'id DESC'
