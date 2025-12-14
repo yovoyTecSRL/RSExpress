@@ -6,6 +6,7 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
 import OrdersFromCRM from '@pages/OrdersFromCRM';
+import OrdersFromSales from '@pages/OrdersFromSales';
 import DeliveryCards from '@pages/DeliveryCards';
 import FleetDashboard from '@pages/FleetDashboard';
 import '@styles/app.css';
@@ -23,7 +24,12 @@ const App = () => {
             <ul className="nav-menu">
               <li className="nav-item">
                 <Link to="/" className="nav-link">
-                  📦 Órdenes
+                  📦 Órdenes CRM
+                </Link>
+              </li>
+              <li className="nav-item">
+                <Link to="/sales" className="nav-link">
+                  💼 Órdenes Venta
                 </Link>
               </li>
               <li className="nav-item">
@@ -44,6 +50,7 @@ const App = () => {
         <main className="main-content">
           <Routes>
             <Route path="/" element={<OrdersFromCRM />} />
+            <Route path="/sales" element={<OrdersFromSales />} />
             <Route path="/deliveries" element={<DeliveryCards />} />
             <Route path="/fleet" element={<FleetDashboard />} />
           </Routes>
