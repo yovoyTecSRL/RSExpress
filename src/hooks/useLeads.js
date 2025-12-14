@@ -23,7 +23,7 @@ const useLeads = (odooService) => {
    * Cargar leads con filtros opcionales
    */
   const loadLeads = useCallback(async (domain = [], offset = 0, limit = 10) => {
-    // Datos demo para pruebas
+    // Datos demo como fallback
     const demoLeads = [
       {
         id: 1,
@@ -120,33 +120,34 @@ const useLeads = (odooService) => {
         return cachedLeads;
       }
 
-      // Intentar cargar desde Odoo
+      // Intentar cargar desde Odoo CRM
       let fetchedLeads = [];
-      if (odooService) {
-        console.log('[useLeads] 🔍 Cargando leads desde Odoo...');
+      
+      if (!odooService) {
+        console.log('[useLeads] ⚠️ Servicio Odoo no disponible, usando datos demo');
+        fetchedLeads = demoLeads;
+      } else {
+        console.log('[useLeads] 🔍 Cargando leads desde Odoo CRM...');
         try {
           fetchedLeads = await odooService.getLeads(domain, offset, limit);
-          console.log('[useLeads] ✅ Leads cargados desde Odoo:', fetchedLeads.length);
           
-          // Si Odoo retorna datos, usarlos directamente
-          if (fetchedLeads && fetchedLeads.length > 0) {
-            console.log('[useLeads] 📊 Usando leads desde Odoo CRM');
+          if (fetchedLeads && Array.isArray(fetchedLeads) && fetchedLeads.length > 0) {
+            console.log('[useLeads] ✅ Leads cargados desde Odoo CRM:', fetchedLeads.length);
+            console.log('[useLeads] 📊 Usando datos reales de Odoo');
           } else {
-            console.log('[useLeads] ⚠️ Odoo retornó resultados vacíos, usando datos demo');
+            console.log('[useLeads] ⚠️ Odoo CRM retornó resultados vacíos, usando fallback demo');
             fetchedLeads = demoLeads;
           }
         } catch (err) {
-          console.warn('[useLeads] ⚠️ Error con Odoo, usando datos demo:', err.message);
+          console.warn('[useLeads] ❌ Error cargando desde Odoo CRM:', err.message);
+          console.log('[useLeads] 📊 Usando datos demo como fallback');
           fetchedLeads = demoLeads;
         }
-      } else {
-        console.log('[useLeads] 📊 Usando datos demo (Odoo no disponible)');
-        fetchedLeads = demoLeads;
       }
 
-      // Si la respuesta está vacía, usar demo
-      if (!fetchedLeads || fetchedLeads.length === 0) {
-        console.log('[useLeads] 📊 Usando datos de demostración (fallback)');
+      // Validar que tenemos datos
+      if (!fetchedLeads || !Array.isArray(fetchedLeads) || fetchedLeads.length === 0) {
+        console.log('[useLeads] 📊 Usando datos de demostración (fallback final)');
         fetchedLeads = demoLeads;
       }
 
@@ -161,11 +162,12 @@ const useLeads = (odooService) => {
         hasMore: fetchedLeads.length === limit
       });
 
-      console.log(`[useLeads] ✅ ${fetchedLeads.length} leads cargados`);
+      console.log(`[useLeads] ✅ ${fetchedLeads.length} leads cargados correctamente`);
       return fetchedLeads;
     } catch (err) {
       console.error('[useLeads] Error cargando leads:', err);
       setError(err.message);
+      setLeads([]);
       return [];
     } finally {
       setLoading(false);
