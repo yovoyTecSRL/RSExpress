@@ -1,7 +1,7 @@
 /**
  * FleetDashboard Component - Fleet Vehicles Management
  * Componente React para gestionar vehículos desde el modelo fleet.vehicle de Odoo
- * Campos: id, name, license_plate, driver_id, state, create_uid, create_date
+ * Campos: id, name, license_plate, driver_id, create_uid, create_date
  */
 
 import React, { useEffect, useState, useCallback } from 'react';
@@ -18,7 +18,6 @@ const FleetDashboard = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
-  const [filterState, setFilterState] = useState('all');
 
   // Hooks
   const { odoo, isConnected } = useOdoo({
@@ -51,7 +50,7 @@ const FleetDashboard = () => {
         'search_read',
         [],
         {
-          fields: ['id', 'name', 'license_plate', 'driver_id', 'state', 'create_uid', 'create_date'],
+          fields: ['id', 'name', 'license_plate', 'driver_id', 'create_uid', 'create_date'],
           order: 'id DESC',
           limit: 100
         }
@@ -79,12 +78,7 @@ const FleetDashboard = () => {
   useEffect(() => {
     let filtered = vehicles;
 
-    // Filtro de estado
-    if (filterState !== 'all') {
-      filtered = filtered.filter(vehicle => vehicle.state === filterState);
-    }
-
-    // Filtro de búsqueda
+    // Búsqueda (sin filtro de estado ya que fleet.vehicle no tiene ese campo)
     if (searchTerm) {
       const term = searchTerm.toLowerCase();
       filtered = filtered.filter(vehicle =>
@@ -95,22 +89,11 @@ const FleetDashboard = () => {
     }
 
     setFilteredVehicles(filtered);
-  }, [vehicles, filterState, searchTerm]);
+  }, [vehicles, searchTerm]);
 
   // ═══════════════════════════════════════════════════════════════════
   // FUNCIONES AUXILIARES
   // ═══════════════════════════════════════════════════════════════════
-
-  const renderStateBadge = (state) => {
-    const badges = {
-      active: { class: 'badge-activo', label: 'Activo', icon: '✅' },
-      inactive: { class: 'badge-inactivo', label: 'Inactivo', icon: '⏸️' },
-      maintenance: { class: 'badge-mantenimiento', label: 'Mantenimiento', icon: '🔧' },
-      retired: { class: 'badge-retirado', label: 'Retirado', icon: '❌' }
-    };
-    const badge = badges[state] || badges.active;
-    return <span className={`state-badge ${badge.class}`}>{badge.icon} {badge.label}</span>;
-  };
 
   const getDriverName = (driverId) => {
     if (Array.isArray(driverId)) {
@@ -168,28 +151,10 @@ const FleetDashboard = () => {
           />
         </div>
 
-        <div className="filter-bar">
-          <select
-            value={filterState}
-            onChange={(e) => setFilterState(e.target.value)}
-            className="filter-select"
-          >
-            <option value="all">Todos los estados</option>
-            <option value="active">Activo</option>
-            <option value="inactive">Inactivo</option>
-            <option value="maintenance">Mantenimiento</option>
-            <option value="retired">Retirado</option>
-          </select>
-        </div>
-
         <div className="stats-info">
           <span className="stat-item">
             <span className="stat-label">Total:</span>
             <span className="stat-value">{filteredVehicles.length}</span>
-          </span>
-          <span className="stat-item">
-            <span className="stat-label">Activos:</span>
-            <span className="stat-value">{filteredVehicles.filter(v => v.state === 'active').length}</span>
           </span>
         </div>
       </div>
@@ -228,7 +193,6 @@ const FleetDashboard = () => {
                 <th className="col-name">Vehículo</th>
                 <th className="col-plate">Placa</th>
                 <th className="col-driver">Conductor</th>
-                <th className="col-state">Estado</th>
                 <th className="col-created">Creado por</th>
                 <th className="col-date">Fecha</th>
               </tr>
@@ -252,9 +216,6 @@ const FleetDashboard = () => {
                   <td className="col-driver">
                     <span>{getDriverName(vehicle.driver_id)}</span>
                   </td>
-                  <td className="col-state">
-                    {renderStateBadge(vehicle.state)}
-                  </td>
                   <td className="col-created">
                     <span>{getCreatedByName(vehicle.create_uid)}</span>
                   </td>
@@ -277,18 +238,6 @@ const FleetDashboard = () => {
             <div className="stat-item">
               <span className="stat-label">Total de Vehículos:</span>
               <span className="stat-value">{filteredVehicles.length}</span>
-            </div>
-            <div className="stat-item">
-              <span className="stat-label">Activos:</span>
-              <span className="stat-value active">
-                {filteredVehicles.filter(v => v.state === 'active').length}
-              </span>
-            </div>
-            <div className="stat-item">
-              <span className="stat-label">En Mantenimiento:</span>
-              <span className="stat-value maintenance">
-                {filteredVehicles.filter(v => v.state === 'maintenance').length}
-              </span>
             </div>
           </div>
         </div>
